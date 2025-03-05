@@ -138,7 +138,7 @@ export const CreatePrototype: React.FC = () => {
             "diagrams": diagrams,
             "interfaces": selectedInterfaces,
             "useAuthentication": useAuthentication,
-
+            "useSyntheticData": useSyntheticData, // adds value of synthetic data to metadata, sends to backend when user creates prototype
         };
 
         const alphanumericRegex = /^[a-zA-Z0-9]+$/;
