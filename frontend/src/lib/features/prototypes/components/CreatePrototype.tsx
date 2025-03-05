@@ -19,7 +19,6 @@ import CryptoJS from 'crypto-js';
 import { useAtom } from "jotai";
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router";
-import Select from "react-select";
 
 type PrototypeInput = {
     name: string;
@@ -48,6 +47,7 @@ export const CreatePrototype: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [generationError, setGenerationError] = useState<string | null>(null);
     const [useAuthentication, setUseAuthentication] = useState(true);
+    const [useSyntheticData, setUseSyntheticData] = useState(false); // New state for Synthetic Data
     const [databaseHash, setDatabaseHash] = useState<string | null>(null);
     const [databasePrototypes, setDatabasePrototypes] = useState([]);
     const [selectedDatabasePrototype, setSelectedDatabasePrototype] = useState(null);
@@ -138,6 +138,7 @@ export const CreatePrototype: React.FC = () => {
             "diagrams": diagrams,
             "interfaces": selectedInterfaces,
             "useAuthentication": useAuthentication,
+
         };
 
         const alphanumericRegex = /^[a-zA-Z0-9]+$/;
@@ -159,7 +160,7 @@ export const CreatePrototype: React.FC = () => {
             metadata,
             database_hash: databaseHash,
         }).then(() => {
-            queryClient.invalidateQueries({ queryKey: ['prototypes', systemId] })
+            queryClient.invalidateQueries(["prototypes", systemId]);
             close();
         }).catch((err) => {
             console.log(err)
@@ -218,25 +219,6 @@ export const CreatePrototype: React.FC = () => {
                         />
                     </FormControl>
                     <FormControl>
-                        <FormLabel>Interfaces</FormLabel>
-                        <Select
-                            isMulti
-                            name="interfaces"
-                            options={interfaces.map((e) => ({ label: e.name, value: e }))}
-                            value={selectedInterfaces}
-                            onChange={setSelectedInterfaces}
-                        />
-                    </FormControl>
-                    <FormControl>
-                        <FormLabel>Reuse database</FormLabel>
-                        <Select
-                            name="database"
-                            options={databasePrototypes}
-                            value={selectedDatabasePrototype}
-                            onChange={setSelectedDatabasePrototype}
-                        />
-                    </FormControl>
-                    <FormControl>
                         <span className="flex flex-row items-center gap-2">
                             <Switch
                                 defaultChecked={useAuthentication}
@@ -245,22 +227,20 @@ export const CreatePrototype: React.FC = () => {
                             <FormLabel sx={{ marginTop: '4px' }}>Use Authentication</FormLabel>
                         </span>
                     </FormControl>
+                    <FormControl>
+                        <span className="flex flex-row items-center gap-2">
+                            <Switch
+                                checked={useSyntheticData}
+                                onChange={(e) => setUseSyntheticData(e.target.checked)}  // synthetic data generation button 
+                            />
+                            <FormLabel sx={{ marginTop: '4px' }}>Use Synthetic Data</FormLabel>
+                        </span>
+                    </FormControl>
                 </form>
                 <Divider />
-                <div className="flex flex-row pt-1">
-                    <Button form="create-project" type="submit" disabled={isPending}>
-                        {isPending ?
-                            <div className="flex flex-row gap-2">
-                                <CircularProgress className="animate-spin" />
-                                <p>Generating</p>
-                            </div> : "Create"}
-                    </Button>
-                </div>
-                {generationError && (
-                    <Typography sx={{ margin: '2px' }}>
-                        <h1 className="text-lg text-red-800">{generationError}</h1>
-                    </Typography>
-                )}
+                <Button form="create-project" type="submit" disabled={isPending}>
+                    {isPending ? "Generating..." : "Create"}
+                </Button>
             </ModalDialog>
         </Modal>
     );
