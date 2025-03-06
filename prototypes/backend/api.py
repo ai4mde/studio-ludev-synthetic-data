@@ -105,6 +105,8 @@ def generate_prototype():
         subprocess.run([GENERATOR_PATH, prototype_name, metadata], check=True)
     except subprocess.CalledProcessError:
         return f"Failed to generate {prototype_name} prototype", 500
+    
+    subprocess.call(["python3", "/usr/src/prototypes/backend/schema_extract.py", prototype_name])
 
     if 'database_prototype_name' in data:
         database_prototype_name = data.get('database_prototype_name')
