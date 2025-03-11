@@ -48,6 +48,7 @@ export const CreatePrototype: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [generationError, setGenerationError] = useState<string | null>(null);
     const [useAuthentication, setUseAuthentication] = useState(true);
+    const [useSyntheticData, setUseSyntheticData] = useState(false); // New state for Synthetic Data
     const [databaseHash, setDatabaseHash] = useState<string | null>(null);
     const [databasePrototypes, setDatabasePrototypes] = useState([]);
     const [selectedDatabasePrototype, setSelectedDatabasePrototype] = useState(null);
