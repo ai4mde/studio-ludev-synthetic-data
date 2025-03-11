@@ -247,6 +247,16 @@ export const CreatePrototype: React.FC = () => {
                             <FormLabel sx={{ marginTop: '4px' }}>Use Authentication</FormLabel>
                         </span>
                     </FormControl>
+                    <FormControl>
+                         <span className="flex flex-row items-center gap-2">
+                             <Switch
+                                 checked={useSyntheticData}
+                                 onChange={(e) => setUseSyntheticData(e.target.checked)}  // synthetic data generation button 
+                             />
+                             <FormLabel sx={{ marginTop: '4px' }}>Use Synthetic Data</FormLabel>
+                         </span>
+                     </FormControl>
+                 </form>  
                 </form>
                 <Divider />
                 <div className="flex flex-row pt-1">
