@@ -15,18 +15,24 @@ from django.apps import apps
 import json
 
 hidden_models = ["LogEntry", "Permission", "Group", "User", "ContentType", "Session"]
+models = apps.get_models()
 
-for model in apps.get_models():
+model_fields = []
+enums = []
+
+for model in models:
     if model.__name__ not in hidden_models :
-        print("model: ")
-        print(model.__name__, model._meta.get_fields())
+        model_fields.append("model: " + model.__name__ + str(model._meta.get_fields()))
         for field in model._meta.fields:
             if field.choices == None:
                 continue
-            print(field.name, "choices: ", field.choices)
+            enums.append("model: " + model.__name__ + ", field: " + field.name + ", choices: " + str(field.choices))
+
+prompt_string = "\n".join(model_fields) + "\n" + "\n".join(enums)
+print(prompt_string)
 
 
-for model in apps.get_models():
+for model in models:
     if model.__name__ not in hidden_models:
         print(f"Injecting data into model: {model.__name__}")
 
