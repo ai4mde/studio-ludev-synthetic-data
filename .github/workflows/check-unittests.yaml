@@ -3,12 +3,10 @@ name: Automated Tests
 on:
   push:
     branches:
-      - develop-yml
-      - develop-yml-test-temp
+      - develop
   pull_request:
     branches:
-      - develop-yml
-      - develop-yml-test-temp
+      - develop
 
 jobs:
   test:
