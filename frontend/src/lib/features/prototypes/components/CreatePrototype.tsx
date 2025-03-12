@@ -248,15 +248,14 @@ export const CreatePrototype: React.FC = () => {
                         </span>
                     </FormControl>
                     <FormControl>
-                         <span className="flex flex-row items-center gap-2">
-                             <Switch
-                                 checked={useSyntheticData}
-                                 onChange={(e) => setUseSyntheticData(e.target.checked)}  // synthetic data generation button 
-                             />
-                             <FormLabel sx={{ marginTop: '4px' }}>Use Synthetic Data</FormLabel>
-                         </span>
-                     </FormControl>
-                 </form>  
+                        <span className="flex flex-row items-center gap-2">
+                            <Switch
+                                checked={useSyntheticData}
+                                onChange={(e) => setUseSyntheticData(e.target.checked)}  // synthetic data generation button 
+                            />
+                            <FormLabel sx={{ marginTop: '4px' }}>Use Synthetic Data</FormLabel>
+                        </span>
+                    </FormControl>
                 </form>
                 <Divider />
                 <div className="flex flex-row pt-1">
