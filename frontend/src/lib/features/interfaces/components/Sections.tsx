@@ -2,6 +2,7 @@ import {
     Divider,
     FormControl,
     Input,
+    Textarea,
 } from "@mui/joy";
 import Chip from '@mui/joy/Chip';
 import { Ban, Pencil, Plus, Save, Trash } from "lucide-react";
@@ -12,20 +13,17 @@ import { useClassAttributes, useClassCustomMethods, useSystemClasses } from "../
 import useLocalStorage from './useLocalStorage';
 
 type Props = {
-    projectId: string;
-    systemId: string;
-    app_comp: string;
-    interfaceId: string;
-    componentId: string;
 };
 
-export const Sections: React.FC<Props> = ({ app_comp }) => {
+export const Sections: React.FC<Props> = () => {
     const { systemId } = useParams();
     const [data, setData, isSuccess] = useLocalStorage('sections', []);
     const [editIndex, setEditIndex] = useState(-1);
     const [newName, setNewName] = useState('');
+    const [newText, setNewText] = useState('');
     const [selectedOperations, setSelectedOperations] = useLocalStorage('selectedOperations', []);
     const [pencelClick, setPencelClick] = useState(false);
+    const [pencelClickText, setPencelClickText] = useState(false);
     const [classes, isSuccessClasses] = useSystemClasses(systemId);
     const [selectedClass, setSelectedClass] = useLocalStorage('selectedClass', '');
     const [classAttributes] = useClassAttributes(systemId, selectedClass);
@@ -33,12 +31,14 @@ export const Sections: React.FC<Props> = ({ app_comp }) => {
     //const [attributes, setAttributes] = useState([]);
     const [selectedAttributes, setSelectedAttributes] = useLocalStorage('selectedAttributes', []);
     const [selectedCustomMethods, setSelectedCustomMethods] = useLocalStorage('selectedCustomMethods', [])
+    const [pages, setPages, isSuccessPages] = useLocalStorage('pages', []);
 
 
     const handleEdit = async (index: number) => {
         // Close name editor when switching section component
         if (pencelClick) {
             setPencelClick(false);
+            setPencelClickText(false);
         }
 
         // Retrieve local storage vars from data
@@ -65,6 +65,12 @@ export const Sections: React.FC<Props> = ({ app_comp }) => {
             setSelectedCustomMethods([]);
         }
 
+        if (data[index].text) {
+            setNewText(data[index].text);
+        } else {
+            setNewText('');
+        }
+
         setEditIndex(index);
     };
 
@@ -72,6 +78,16 @@ export const Sections: React.FC<Props> = ({ app_comp }) => {
         const newData = [...data];
         newData[index].name = newName;
         setData(newData);
+        const sectionId = data[index].id;
+        if (isSuccessPages) {
+            const newPages = [...pages]
+            newPages.map(page => {
+                page.sections.map(section => {
+                    section.value === sectionId ? (section.label = newName) : null
+                })
+            })
+            setPages(newPages);
+        }
         setPencelClick(false);
     };
 
@@ -83,12 +99,31 @@ export const Sections: React.FC<Props> = ({ app_comp }) => {
         setPencelClick(false);
     };
 
+    const handleTextChange = (index: number) => {
+        const newData = [...data];
+        newData[index].text = newText;
+        setData(newData);
+        setPencelClickText(false);
+    };
+
+    const handlePencilClickText = () => {
+        setPencelClickText(true);
+    }
+
+    const handleTextCancel = () => {
+        setPencelClickText(false);
+    };
+
     const handleMinus = () => {
         setEditIndex(-1);
     };
 
     const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setNewName(event.target.value);
+    };
+
+    const handleInputChangeText = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+        setNewText(event.target.value);
     };
 
     const handleDelete = (index: number) => {
@@ -248,9 +283,6 @@ export const Sections: React.FC<Props> = ({ app_comp }) => {
                                         />
                                     </div>
                                     <FormControl className="space-y-1">
-                                        <h3 className="text-xl font-bold">Text</h3>
-                                    </FormControl>
-                                    <FormControl className="space-y-1">
                                         <h3 className="text-xl font-bold">Custom Operations</h3>
                                         <Multiselect
                                             options={classCustomMethods}
@@ -262,6 +294,51 @@ export const Sections: React.FC<Props> = ({ app_comp }) => {
                                             onSelect={(selectedList, selectedItem) => handleCustomMethodSelect(selectedList, selectedItem, index)}
                                             onRemove={(selectedList, selectedItem) => handleCustomMethodRemove(selectedList, selectedItem, index)}
                                         />
+                                    </FormControl>
+                                    <FormControl className="space-y-1">
+                                        <h3 className="text-xl font-bold">Text</h3>
+                                        {!pencelClickText && (
+                                            <div className="flex flex-wrap gap-2">
+                                                <h2 className="text-l">
+                                                    {section.text ? (
+                                                        <span>{section.text}</span>
+                                                    ) : (
+                                                        <span style={{ color: 'grey' }}>No text specified...</span>
+                                                    )}
+                                                </h2>
+                                                <Pencil
+                                                    className="cursor-pointer ml-auto"
+                                                    onClick={handlePencilClickText}
+                                                />
+                                            </div>
+                                        )}
+
+                                        {pencelClickText && (
+                                            <>
+                                                <Textarea
+                                                    name="text"
+                                                    placeholder="Description, explanation, welcome message, ..."
+                                                    minRows={4}
+                                                    maxRows={4}
+                                                    value={newText}
+                                                    onChange={handleInputChangeText}
+                                                />
+                                                <div className="flex flex-wrap gap-2 ml-auto">
+                                                    <button
+                                                        onClick={() => handleTextChange(index)}
+                                                        className="w-[40px] h-[40px] bg-blue-500 text-white px-2 py-1 rounded-md hover:bg-blue-600"
+                                                    >
+                                                        <Save />
+                                                    </button>
+                                                    <button
+                                                        onClick={handleTextCancel}
+                                                        className="w-[40px] h-[40px] bg-gray-300 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-400"
+                                                    >
+                                                        <Ban />
+                                                    </button>
+                                                </div>
+                                            </>
+                                        )}
                                     </FormControl>
                                     <Divider />
                                     <div className="flex gap-2">

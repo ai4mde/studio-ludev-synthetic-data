@@ -1,21 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Trash, Save, Ban, Pencil } from "lucide-react";
-import useLocalStorage from './useLocalStorage';
 import {
+    Divider,
     FormControl,
     Input,
-    Divider,
-} from "@mui/joy"
+} from "@mui/joy";
+import { Ban, Pencil, Plus, Save, Trash } from "lucide-react";
+import React, { useEffect, useState } from 'react';
 import Select from "react-select";
+import useLocalStorage from './useLocalStorage';
 
 type Props = {
-    projectId: string;
-    systemId: string;
-    interfaceId: string;
-    componentId: string;
 };
 
-export const Pages: React.FC<Props> = ({ app_comp }) => {
+export const Pages: React.FC<Props> = () => {
     const [data, setData, isSuccess] = useLocalStorage('pages', []);
     const [editIndex, setEditIndex] = useState(-1);
     const [newName, setNewName] = useState('');
@@ -113,8 +109,8 @@ export const Pages: React.FC<Props> = ({ app_comp }) => {
                                         )}
                                         {pencelClick && (
                                             <FormControl required className="space-y-1">
-                                                <Input 
-                                                    type="text" 
+                                                <Input
+                                                    type="text"
                                                     value={newName}
                                                     onChange={handleInputChange}
                                                 />
@@ -141,7 +137,7 @@ export const Pages: React.FC<Props> = ({ app_comp }) => {
                                             {categories.length > 0 ? (
                                                 <Select
                                                     name="category"
-                                                    options={categories.map((e) => ({ label: e.name, value: e}))}
+                                                    options={categories.map((e) => ({ label: e.name, value: e }))}
                                                     value={selectedCategory}
                                                     onChange={setSelectedCategory}
                                                     isClearable={true}
@@ -153,16 +149,16 @@ export const Pages: React.FC<Props> = ({ app_comp }) => {
                                     )}
                                     {isSuccessSections && (
                                         <div className='space-y-1'>
-                                        <h3 className="text-xl font-bold">Section Components</h3>
-                                        <Select
-                                            isMulti
-                                            name="sections"
-                                            options={sections.map((e) => ({ label: e.name, value: e.id}))}
-                                            value={selectedSections}
-                                            onChange={setSelectedSections}
-                                        />
-                                    </div>
-                                    
+                                            <h3 className="text-xl font-bold">Section Components</h3>
+                                            <Select
+                                                isMulti
+                                                name="sections"
+                                                options={sections.map((e) => ({ label: e.name, value: e.id }))}
+                                                value={selectedSections}
+                                                onChange={setSelectedSections}
+                                            />
+                                        </div>
+
                                     )}
                                     <Divider />
                                     <div className="flex gap-2">
