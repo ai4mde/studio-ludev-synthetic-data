@@ -112,7 +112,7 @@ def generate_prototype():
     except subprocess.CalledProcessError:
         return f"Failed to generate prototype, id={id}", 500
     
-    subprocess.call(["python3", "/usr/src/prototypes/backend/schema_extract.py", name])
+    subprocess.call(["python3", "/usr/src/prototypes/backend/schema_extract.py", name, system])
 
     # TODO: this database retrieval should be done using ids
     if 'database_prototype_name' in data:

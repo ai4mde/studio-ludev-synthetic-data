@@ -2,8 +2,12 @@ import os
 import sys
 
 PROTOTYPE_NAME = sys.argv[1]
+SYSTEM = sys.argv[2]
 
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'generated_prototypes',PROTOTYPE_NAME))
+print("my name is:", PROTOTYPE_NAME)
+print("part of system:", SYSTEM)
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'generated_prototypes', SYSTEM, PROTOTYPE_NAME))
 sys.path.append(PROJECT_ROOT)
 os.environ.setdefault("DJANGO_SETTINGS_MODULE",f"{PROTOTYPE_NAME}.settings")
 
