@@ -139,6 +139,7 @@ export const CreatePrototype: React.FC = () => {
             "diagrams": diagrams,
             "interfaces": selectedInterfaces,
             "useAuthentication": useAuthentication,
+            "useSyntheticData": useSyntheticData,
         };
 
         const alphanumericRegex = /^[a-zA-Z0-9]+$/;
