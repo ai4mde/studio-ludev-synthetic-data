@@ -3,10 +3,16 @@ name: Automated Tests
 on:
   push:
     branches:
+    # - main
+    # - main/**
       - develop
+      - develop/**
   pull_request:
     branches:
+    # - main
+    # - main/**
       - develop
+      - develop/**
 
 jobs:
   test:
