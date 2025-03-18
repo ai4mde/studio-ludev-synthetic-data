@@ -10,7 +10,7 @@ on:
 jobs:
   build:
     name: Build
-    runs-on: github-arc
+    runs-on: ubuntu-latest # Switch back to github-arc later
     permissions: read-all
     steps:
       - uses: actions/checkout@v2

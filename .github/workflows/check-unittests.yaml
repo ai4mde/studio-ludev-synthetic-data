@@ -16,7 +16,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest # Switch to github-arc later
 
     steps:
       - name: Checkout code
