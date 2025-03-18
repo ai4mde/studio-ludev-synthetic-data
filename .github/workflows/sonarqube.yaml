@@ -1,13 +1,14 @@
-# name: SonarQube Scanning
+name: SonarQube Scanning
 
-# on:
-#   push:
-#     branches:
-#       - main
-#   pull_request:
-#     types: [opened, synchronize, reopened]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened]
 
-# jobs:
+jobs:
+  ~
 #   build:
 #     name: Build
 #     runs-on: ubuntu-latest # Switch back to github-arc later
