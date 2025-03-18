@@ -3,54 +3,20 @@ name: SonarQube Scanning
 on:
   push:
     branches:
-      - develop-yml
-      - develop-yml-test-temp
+      - main
   pull_request:
-    branches:
-      - develop-yml
-      - develop-yml-test-temp
+    types: [opened, synchronize, reopened]
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-
+  build:
+    name: Build
+    runs-on: ubuntu-latest # Switch back to github-arc later
+    permissions: read-all
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        
-      # We could make a code block for setting up a conda env as well
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - uses: actions/checkout@v2
         with:
-          python-version: "3.x"
-      
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-
-      - name: Run Pylint
-        run: |
-          pip install pylint
-          pylint $(git ls-files '*.py')
-
-# on:
-#   push:
-#     branches:
-#       - main
-#   pull_request:
-#     types: [opened, synchronize, reopened]
-
-# jobs:
-#   build:
-#     name: Build
-#     runs-on: ubuntu-latest # Switch back to github-arc later
-#     permissions: read-all
-#     steps:
-#       - uses: actions/checkout@v2
-#         with:
-#           fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
-#       - uses: sonarsource/sonarqube-scan-action@master
-#         env:
-#           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-#           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
+      - uses: sonarsource/sonarqube-scan-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
