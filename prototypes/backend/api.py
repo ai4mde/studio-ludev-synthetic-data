@@ -102,6 +102,8 @@ def get_active_prototype():
 def generate_prototype():
     GENERATOR_PATH = "/usr/src/prototypes/backend/generation/generator.sh" # TODO: put in env
     COPY_DATABASE_PATH = "/usr/src/prototypes/backend/generation/copy_database.sh"
+    GET_GLOBALS_PATH = "/usr/src/prototypes/backend/generation/generation_scripts/get_globals.py"
+
     data = request.json
     id = data.get('id')
     name = data.get('name')
@@ -111,6 +113,19 @@ def generate_prototype():
         subprocess.run([GENERATOR_PATH, id, system, name, metadata], check=True)
     except subprocess.CalledProcessError:
         return f"Failed to generate prototype, id={id}", 500
+    
+    # print(metadata)
+    retrieveUseSyntheticData = subprocess.run(
+        ["python3", GET_GLOBALS_PATH, "get_synth", metadata], 
+        stdout=subprocess.PIPE,    
+        text=True                    
+    )   
+    # Backend will use Synthetic data here
+    useSyntheticData = retrieveUseSyntheticData.stdout.strip() == "True"
+    if useSyntheticData:
+        print("Use synthetic data.")
+    else:
+        print("Do not use synthetic data.")
 
     # TODO: this database retrieval should be done using ids
     if 'database_prototype_name' in data:

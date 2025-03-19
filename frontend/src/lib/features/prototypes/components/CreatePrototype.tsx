@@ -48,6 +48,7 @@ export const CreatePrototype: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [generationError, setGenerationError] = useState<string | null>(null);
     const [useAuthentication, setUseAuthentication] = useState(true);
+    const [useSyntheticData, setUseSyntheticData] = useState(false); // New state for Synthetic Data
     const [databaseHash, setDatabaseHash] = useState<string | null>(null);
     const [databasePrototypes, setDatabasePrototypes] = useState([]);
     const [selectedDatabasePrototype, setSelectedDatabasePrototype] = useState(null);
@@ -138,6 +139,7 @@ export const CreatePrototype: React.FC = () => {
             "diagrams": diagrams,
             "interfaces": selectedInterfaces,
             "useAuthentication": useAuthentication,
+            "useSyntheticData": useSyntheticData,
         };
 
         const alphanumericRegex = /^[a-zA-Z0-9]+$/;
@@ -244,6 +246,15 @@ export const CreatePrototype: React.FC = () => {
                                 onChange={(e) => setUseAuthentication(e.target.checked)}
                             />
                             <FormLabel sx={{ marginTop: '4px' }}>Use Authentication</FormLabel>
+                        </span>
+                    </FormControl>
+                    <FormControl>
+                        <span className="flex flex-row items-center gap-2">
+                            <Switch
+                                checked={useSyntheticData}
+                                onChange={(e) => setUseSyntheticData(e.target.checked)}  // synthetic data generation button 
+                            />
+                            <FormLabel sx={{ marginTop: '4px' }}>Use Synthetic Data</FormLabel>
                         </span>
                     </FormControl>
                 </form>
