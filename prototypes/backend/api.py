@@ -39,7 +39,7 @@ def start_prototype(prototype_id: str, prototype_name: str, prototype_system: st
         prototype_path = os.path.join(ROOT_DIR, prototype_system, prototype_name)
         if not os.path.isdir(prototype_path):
             return None
-        
+
         process = subprocess.Popen(
             ["python", "manage.py", "runserver", f"0.0.0.0:{RUNNING_PROTOTYPE_PORT}"],
             cwd=prototype_path,
@@ -100,8 +100,10 @@ def get_active_prototype():
 
 @app.route('/generate', methods=['POST'])
 def generate_prototype():
-    GENERATOR_PATH = "/usr/src/prototypes/backend/generation/generator.sh" # TODO: put in env
+    GENERATOR_PATH = "/usr/src/prototypes/backend/generation/generator.sh"  # TODO: put in env
     COPY_DATABASE_PATH = "/usr/src/prototypes/backend/generation/copy_database.sh"
+    GET_GLOBALS_PATH = "/usr/src/prototypes/backend/generation/generation_scripts/get_globals.py"
+
     data = request.json
     id = data.get('id')
     name = data.get('name')
@@ -111,8 +113,19 @@ def generate_prototype():
         subprocess.run([GENERATOR_PATH, id, system, name, metadata], check=True)
     except subprocess.CalledProcessError:
         return f"Failed to generate prototype, id={id}", 500
-    
-    subprocess.call(["python3", "/usr/src/prototypes/backend/schema_extract.py", name, system])
+
+    # print(metadata)
+    retrieveUseSyntheticData = subprocess.run(
+        ["python3", GET_GLOBALS_PATH, "get_synth", metadata],
+        stdout=subprocess.PIPE,
+        text=True
+    )
+    # Backend will use Synthetic data here
+    useSyntheticData = retrieveUseSyntheticData.stdout.strip() == "True"
+    if useSyntheticData:
+        print("Use synthetic data.")
+    else:
+        print("Do not use synthetic data.")
 
     # TODO: this database retrieval should be done using ids
     if 'database_prototype_name' in data:
@@ -126,7 +139,7 @@ def generate_prototype():
 
 @app.route('/remove', methods=['DELETE'])
 def remove_prototype():
-    REMOVER_PATH = "/usr/src/prototypes/backend/generation/remover.sh" # TODO: put in env
+    REMOVER_PATH = "/usr/src/prototypes/backend/generation/remover.sh"  # TODO: put in env
     data = request.json
     id = data.get('id')
     name = data.get('name')
