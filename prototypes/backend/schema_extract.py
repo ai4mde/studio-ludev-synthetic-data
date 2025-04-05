@@ -5,31 +5,34 @@ import json
 import django
 from django.apps import apps
 from openai import OpenAI
-
+import requests
 ##############################################
 
 # PLEASE PUT YOUR OPENAI API KEY IN THE CALL_OPENAI FUNCTION BELOW
 
 ##############################################
 
+def call_groq(prompt: str, model: str = 'llama3-70b-8192') -> str:
+    api_key = "PUT API KEY HERE"
+    url = "https://api.groq.com/openai/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "model": model,
+        "messages": [
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.7,
+    }
 
-def call_openai(prompt: str, model: str = 'gpt-4o-mini') -> str:
-    client = OpenAI(
-        api_key="PUT API KEY HERE",
-    )
     try:
-        chat_completion = client.chat.completions.create(
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt,
-                }
-            ],
-            model=model,
-        )
-        return chat_completion.choices[0].message.content
+        response = requests.post(url, headers=headers, json=payload)
+        response.raise_for_status()
+        return response.json()["choices"][0]["message"]["content"]
     except Exception as e:
-        raise Exception("Failed to call LLM, error " + str(e))
+        raise Exception("Failed to call Groq LLM: " + str(e))
 
 
 PROTOTYPE_NAME = sys.argv[1]
@@ -96,13 +99,13 @@ for model_def in model_definitions:
 
     print(f"Calling LLM to generate data for {model_name}...")
     try:
-        llm_response = call_openai(SYN_DATA_PROMPT)
+        llm_response = call_groq(SYN_DATA_PROMPT)
         try:
             json_match = re.search(r'```json\n([\s\S]*?)\n```', llm_response)
-            if json_match:
-                synthetic_data = json.loads(json_match.group(1))
-            else:
-                synthetic_data = json.loads(llm_response)
+            json_start = llm_response.find('[')
+            json_end = llm_response.rfind(']') + 1
+            json_string = llm_response[json_start:json_end]
+            synthetic_data = json.loads(json_string)
             print(f"Successfully parsed {len(synthetic_data)} records for {model_name}")
             for record in synthetic_data:
                 instance = model_class()
