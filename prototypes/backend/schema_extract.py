@@ -4,7 +4,6 @@ import re
 import json
 import django
 from django.apps import apps
-from openai import OpenAI
 import requests
 ##############################################
 
@@ -13,7 +12,7 @@ import requests
 ##############################################
 
 def call_groq(prompt: str, model: str = 'llama3-70b-8192') -> str:
-    api_key = "PUT API KEY HERE"
+    api_key = "PUT API KEY HERE"    
     url = "https://api.groq.com/openai/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {api_key}",
@@ -63,7 +62,7 @@ def extract_model_definitions(models, hidden_models):
             model_definitions.append(model_def)
     return model_definitions
 
-def generate_synthetic_prompt(model_def, N_RECORDS):
+def make_synthetic_data_prompt(model_def, N_RECORDS):
     single_model_def = {
         "model_name": model_def["model_name"],
         "fields": model_def["fields"],
@@ -118,7 +117,7 @@ def main(PROTOTYPE_NAME, SYSTEM, N_RECORDS):
             print(f"Model {model_name} not found in models")
             continue
 
-        SYN_DATA_PROMPT = generate_synthetic_prompt(model_def, N_RECORDS)
+        SYN_DATA_PROMPT = make_synthetic_data_prompt(model_def, N_RECORDS)
         print(SYN_DATA_PROMPT)
 
         print(f"Calling LLM to generate data for {model_name}...")
