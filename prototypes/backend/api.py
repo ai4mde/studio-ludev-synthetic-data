@@ -113,7 +113,7 @@ def generate_prototype():
         subprocess.run([GENERATOR_PATH, id, system, name, metadata], check=True)
     except subprocess.CalledProcessError:
         return f"Failed to generate prototype, id={id}", 500
-
+    subprocess.call(["python3", "/usr/src/prototypes/backend/schema_extract.py", name, system])   #added this for now to test the working of schema_extract.py
     # print(metadata)
     retrieveUseSyntheticData = subprocess.run(
         ["python3", GET_GLOBALS_PATH, "get_synth", metadata],
