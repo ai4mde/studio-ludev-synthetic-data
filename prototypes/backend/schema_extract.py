@@ -4,6 +4,7 @@ import re
 import json
 import django
 from django.apps import apps
+from django.db.models import ForeignKey, OneToOneField
 import requests
 from graphlib import TopologicalSorter
 ##############################################
