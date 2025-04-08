@@ -5,6 +5,7 @@ import json
 import django
 from django.apps import apps
 import requests
+from graphlib import TopologicalSorter
 ##############################################
 
 # PLEASE PUT YOUR OPENAI API KEY IN THE CALL_OPENAI FUNCTION BELOW
@@ -84,6 +85,25 @@ def extract_json_from_response(llm_response):
     json_end = llm_response.rfind(']') + 1
     json_string = llm_response[json_start:json_end]
     return json.loads(json_string)
+
+#Returns a list of models topologically sorted based on key constraints
+#The model that has no dependencies will appear first in the list
+def toposort_models(models, hidden_models):
+    ts = TopologicalSorter()
+    
+    for model in models:
+        if model.__name__ in hidden_models:
+            continue
+
+        key_constraints = []
+        
+        for field in model._meta.fields:
+            if isinstance(field, ForeignKey) or isinstance(field, OneToOneField):
+                key_constraints.append(field.name)
+        
+        ts.add(model.__name__, *key_constraints)
+    
+    return [*ts.static_order()] 
 
 def save_records(model_class, synthetic_data, model_name):
     for record in synthetic_data:
