@@ -10,8 +10,8 @@ on:
     types: [opened, synchronize, reopened]
 
 jobs:
-  sonarqube:
-    name: SonarQube
+  build:
+    name: Build
     runs-on: ubuntu-latest # Switch back to github-arc later
     permissions: read-all
     steps:
