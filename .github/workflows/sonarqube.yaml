@@ -13,6 +13,7 @@ jobs:
   sonarqube:
     name: SonarQube
     runs-on: ubuntu-latest # switch to github-arc later
+    permissions: read-all
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
