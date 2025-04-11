@@ -7,14 +7,15 @@ from django.apps import apps
 from django.db.models import ForeignKey, OneToOneField
 import requests
 from graphlib import TopologicalSorter
+from openai import OpenAI
 ##############################################
 
 # PLEASE PUT YOUR GROQ API KEY IN THE call_groq FUNCTION BELOW
 
 ##############################################
 
-def call_groq(prompt: str, model: str = 'llama3-70b-8192') -> str:
-    api_key = "PLACE KEY HERE"    
+def call_groq(prompt: str, model: str = 'llama-3.3-70b-versatile') -> str:
+    api_key = ""    
     url = "https://api.groq.com/openai/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {api_key}",
@@ -34,6 +35,24 @@ def call_groq(prompt: str, model: str = 'llama3-70b-8192') -> str:
         return response.json()["choices"][0]["message"]["content"]
     except Exception as e:
         raise Exception("Failed to call Groq LLM: " + str(e))
+    
+def call_openai(prompt: str, model: str = 'gpt-4o-mini') -> str:
+    client = OpenAI(
+        api_key="",
+    )
+    try:
+         chat_completion = client.chat.completions.create(
+             messages=[
+                 {
+                     "role": "user",
+                     "content": prompt,
+                 }
+             ],
+             model=model,
+         )
+         return chat_completion.choices[0].message.content
+    except Exception as e:
+         raise Exception("Failed to call LLM, error " + str(e))
 
 
 def setup_django(PROTOTYPE_NAME, SYSTEM):
@@ -91,7 +110,7 @@ def make_synthetic_data_prompt(model_definitions, N_RECORDS):
     You are going to generate synthetic sample data for a database based on Django model definitions.
     1) Make sure values match the expected type for each field. 
     2) Make sure that the data are plausible real world values.
-    3)You are going to return one json object, within this json object each model name is associated with an array of instances.
+    3) You are going to return one json object, within this json object each model name is associated with an array of instances.
     4) Return only one unified json object made from the model arrays please, NO OTHER TEXT THAN JSON.
 
     """
@@ -112,8 +131,8 @@ def make_synthetic_data_prompt(model_definitions, N_RECORDS):
     return prompt
 
 def extract_json_from_response(llm_response):
-    json_start = llm_response.find('[')
-    json_end = llm_response.rfind(']') + 1
+    json_start = llm_response.find('{')
+    json_end = llm_response.rfind('}') + 1
     json_string = llm_response[json_start:json_end]
     return json.loads(json_string)
 
@@ -130,9 +149,9 @@ def save_records(model_class, synthetic_data, model_name, name_to_id_to_id_mappi
                 continue
             try:
                 field = model_class._meta.get_field(field_name)
-                print("insterting: ", field_name, " into field:", model_name)
-                print(field)
-                print(f"Field class: {field.__class__.__name__}")
+                # print("insterting: ", field_name, " into field:", model_name)
+                # print(field)
+                # print(f"Field class: {field.__class__.__name__}")
                 # if isinstance(field, (ForeignKey, OneToOneField)):
                 #     print(f"Field {field_name} is recognized as ForeignKey or OneToOneField")
                 #     related_model = field.remote_field.model
@@ -143,12 +162,12 @@ def save_records(model_class, synthetic_data, model_name, name_to_id_to_id_mappi
                 #     print(f"Field {field_name} is not ForeignKey or OneToOneField")
                 if isinstance(field, (ForeignKey, OneToOneField)):
                     related_model = field.remote_field.model
-                    print("RECOG!:", related_model)
-                    print(" I think the id the foreign key should be: ", name_to_id_to_id_mapping_mapping[field_name][str(field_value)])
+                    # print("RECOG!:", related_model)
+                    # print(" I think the id the foreign key should be: ", name_to_id_to_id_mapping_mapping[field_name][str(field_value)])
                     related_instance = related_model.objects.get(id=name_to_id_to_id_mapping_mapping[field_name][str(field_value)])
-                    print(name_to_id_to_id_mapping_mapping[field_name])
-                    print(name_to_id_to_id_mapping_mapping[field_name][str(field_value)])
-                    print(related_instance)
+                    # print(name_to_id_to_id_mapping_mapping[field_name])
+                    # print(name_to_id_to_id_mapping_mapping[field_name][str(field_value)])
+                    # print(related_instance)
                     setattr(instance, field_name, related_instance)
                 else:
                     setattr(instance, field_name, field_value)
@@ -173,7 +192,7 @@ def main(PROTOTYPE_NAME, SYSTEM, N_RECORDS):
     insert_order = toposort_models(models,hidden_models)
 
     SYN_DATA_PROMPT = make_synthetic_data_prompt(model_definitions, N_RECORDS)
-    print(SYN_DATA_PROMPT)
+    # print(SYN_DATA_PROMPT)
     
     total_json = None
 
@@ -181,7 +200,7 @@ def main(PROTOTYPE_NAME, SYSTEM, N_RECORDS):
         llm_response = call_groq(SYN_DATA_PROMPT)
         print(llm_response)
         try: 
-            total_json = json.loads(llm_response)
+            total_json = extract_json_from_response(llm_response)
         except json.JSONDecodeError as e:
                     print(f"Failed to parse JSON from LLM response: {e}")
                     print(f"Raw response: {llm_response}")
@@ -229,6 +248,6 @@ def main(PROTOTYPE_NAME, SYSTEM, N_RECORDS):
 if __name__ == "__main__":
     PROTOTYPE_NAME = sys.argv[1]
     SYSTEM = sys.argv[2]
-    N_RECORDS = 5
+    N_RECORDS = 50
 
     main(PROTOTYPE_NAME, SYSTEM, N_RECORDS)
