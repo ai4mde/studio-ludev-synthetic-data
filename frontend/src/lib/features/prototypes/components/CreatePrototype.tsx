@@ -282,35 +282,54 @@ export const CreatePrototype: React.FC = () => {
 
                     {useSyntheticData && (
                         <div className="mt-4">
-                            <h4 className="font-semibold mb-2">Specicfy Synthetic Data Amount Per Table</h4>
-                            {diagrams?.nodes?.map((node, index) => {
-                                // Find the first property with a `name`
-                                const name = extractNodeNames(node);
+                            <h4 className="font-semibold mb-2">Specify Synthetic Data Amount Per Node:</h4>
 
-                                if (!name) return null; // Skip if no name property is found
+                            {/* Scrollable content */}
+                            <div className="max-h-[400px] overflow-y-auto pr-2">
+                                {Array.isArray(diagrams) && diagrams.length > 0 ? (
+                                    <div className="mb-6 border p-4 rounded shadow">
+                                        {/* Access only the first diagram */}
+                                        {Array.isArray(diagrams[0].nodes) ? (
+                                            diagrams[0].nodes.map((node, nodeIndex) => {
+                                                const name = extractNodeNames(node);
 
-                                return (
-                                    <div key={index} className="mb-4">
-                                        <label className="block font-medium mb-1">{name}</label>
-                                        <input
-                                            type="number"
-                                            value={syntheticCounts[name] || 0} // Default to 0 if no value set
-                                            onChange={(e) => updateValue(name, parseInt(e.target.value, 10))}
-                                            className="border border-gray-300 rounded px-2 py-1 w-32"
-                                            placeholder="Enter amount"
-                                        />
+                                                return (
+                                                    <div key={nodeIndex} className="mb-4">
+                                                        <h4 className="font-semibold mb-2">
+                                                            Node {nodeIndex + 1}: {name || " No name extracted"}
+                                                        </h4>
+
+                                                        {name && (
+                                                            <input
+                                                                type="number"
+                                                                min="0"
+                                                                value={syntheticCounts[name] || 0}
+                                                                onChange={(e) => {
+                                                                    const newValue = parseInt(e.target.value, 10);
+                                                                    if (!isNaN(newValue) && newValue >= 0) {
+                                                                        updateValue(name, newValue);
+                                                                    }
+                                                                }}
+                                                                className="border border-gray-300 rounded px-2 py-1 w-32 mt-1"
+                                                                placeholder="Enter amount"
+                                                            />
+                                                        )}
+                                                    </div>
+                                                );
+                                            })
+                                        ) : (
+                                            <p className="text-red-500">No nodes found in the first diagram</p>
+                                        )}
                                     </div>
-                                );
-                            })}
+                                ) : (
+                                    <p className="text-red-500">No diagrams available</p>
+                                )}
+                            </div>
+
+                            <h4 className="font-semibold mt-4 mb-2">Done Rendering First Diagram</h4>
                         </div>
                     )}
 
-
-                    {/* Optionally display diagrams directly in the UI */}
-                    <div className="mt-4">
-                        <h4 className="font-semibold">Diagrams Data (Debugging)</h4>
-                        <pre>{JSON.stringify(diagrams, null, 2)}</pre> {/* Display diagrams as formatted JSON */}
-                    </div>
 
                 </form>
                 <Divider />
