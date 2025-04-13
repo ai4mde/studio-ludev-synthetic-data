@@ -49,6 +49,7 @@ export const CreatePrototype: React.FC = () => {
     const [generationError, setGenerationError] = useState<string | null>(null);
     const [useAuthentication, setUseAuthentication] = useState(true);
     const [useSyntheticData, setUseSyntheticData] = useState(false); // New state for Synthetic Data
+    const [syntheticCounts, setSyntheticCounts] = useState<Record<string, number>>({}); //extra
     const [databaseHash, setDatabaseHash] = useState<string | null>(null);
     const [databasePrototypes, setDatabasePrototypes] = useState([]);
     const [selectedDatabasePrototype, setSelectedDatabasePrototype] = useState(null);
@@ -140,6 +141,7 @@ export const CreatePrototype: React.FC = () => {
             "interfaces": selectedInterfaces,
             "useAuthentication": useAuthentication,
             "useSyntheticData": useSyntheticData,
+            "syntheticCounts": syntheticCounts,
         };
 
         const alphanumericRegex = /^[a-zA-Z0-9]+$/;
@@ -180,6 +182,26 @@ export const CreatePrototype: React.FC = () => {
             </Modal>
         );
     }
+
+    const hasName = (obj: any): obj is { name: string } => {
+        return obj && typeof obj.name === 'string';
+    };
+
+    const extractNodeNames = (node: any) => {
+        // Loop through all properties of the node (cls, enum, etc.)
+        const subObjectWithName = Object.values(node).find((sub) => hasName(sub));
+
+        return subObjectWithName ? subObjectWithName.name : null;
+    };
+
+
+    // Update synthetic data counts
+    const updateValue = (name: string, value: number) => {
+        setSyntheticCounts((prev) => ({
+            ...prev,
+            [name]: value, // Update the value for the specified name
+        }));
+    };
 
     return (
         <Modal open={open} onClose={() => { close(); setGenerationError(null) }}>
@@ -257,6 +279,39 @@ export const CreatePrototype: React.FC = () => {
                             <FormLabel sx={{ marginTop: '4px' }}>Use Synthetic Data</FormLabel>
                         </span>
                     </FormControl>
+
+                    {useSyntheticData && (
+                        <div className="mt-4">
+                            <h4 className="font-semibold mb-2">Specicfy Synthetic Data Amount Per Table</h4>
+                            {diagrams?.nodes?.map((node, index) => {
+                                // Find the first property with a `name`
+                                const name = extractNodeNames(node);
+
+                                if (!name) return null; // Skip if no name property is found
+
+                                return (
+                                    <div key={index} className="mb-4">
+                                        <label className="block font-medium mb-1">{name}</label>
+                                        <input
+                                            type="number"
+                                            value={syntheticCounts[name] || 0} // Default to 0 if no value set
+                                            onChange={(e) => updateValue(name, parseInt(e.target.value, 10))}
+                                            className="border border-gray-300 rounded px-2 py-1 w-32"
+                                            placeholder="Enter amount"
+                                        />
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+
+
+                    {/* Optionally display diagrams directly in the UI */}
+                    <div className="mt-4">
+                        <h4 className="font-semibold">Diagrams Data (Debugging)</h4>
+                        <pre>{JSON.stringify(diagrams, null, 2)}</pre> {/* Display diagrams as formatted JSON */}
+                    </div>
+
                 </form>
                 <Divider />
                 <div className="flex flex-row pt-1">
