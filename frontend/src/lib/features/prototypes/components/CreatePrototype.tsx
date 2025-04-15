@@ -203,6 +203,10 @@ export const CreatePrototype: React.FC = () => {
         }));
     };
 
+    const validClassNames =
+        interfaces[0]?.data?.sections?.map((section) => section.class) || [];
+
+
     return (
         <Modal open={open} onClose={() => { close(); setGenerationError(null) }}>
             <ModalDialog>
@@ -222,7 +226,8 @@ export const CreatePrototype: React.FC = () => {
                 <Divider />
                 <form
                     id="create-project"
-                    className="flex min-w-96 flex-col gap-2"
+                    // className="flex min-w-96 flex-col gap-2"
+                    className="max-h-[400px] overflow-y-auto pr-2"
                     onSubmit={onSubmit}
                 >
                     <FormControl required>
@@ -250,6 +255,14 @@ export const CreatePrototype: React.FC = () => {
                             value={selectedInterfaces}
                             onChange={(newValue) => setSelectedInterfaces(newValue ? newValue.map((v) => v.value) : [])}
                         />
+
+                        {/* <pre className="max-h-[400px] overflow-y-auto pr-2 bg-gray-100 p-2 rounded text-sm">
+                            {JSON.stringify(
+                                interfaces[0]?.data?.sections?.map((section) => section.class),
+                                null,
+                                2
+                            )}
+                        </pre> */}
 
                     </FormControl>
                     <FormControl>
@@ -284,52 +297,58 @@ export const CreatePrototype: React.FC = () => {
                         <div className="mt-4">
                             <h4 className="font-semibold mb-2">Specify Synthetic Data Amount Per Node:</h4>
 
+                            {/* <pre className="max-h-[400px] overflow-y-auto pr-2 bg-gray-100 p-2 rounded text-sm">
+                                {JSON.stringify(
+                                    diagrams[0]?.nodes?.map((node) => node.cls_ptr),
+                                    null,
+                                    2
+                                )}
+                            </pre> */}
+                            {/* 
+                            <pre className="max-h-[400px] overflow-y-auto pr-2 bg-gray-100 p-2 rounded text-sm">
+                                {JSON.stringify(
+                                    diagrams[0],
+                                    null,
+                                    2
+                                )}
+                            </pre> */}
+
                             {/* Scrollable content */}
                             <div className="max-h-[400px] overflow-y-auto pr-2">
-                                {Array.isArray(diagrams) && diagrams.length > 0 ? (
-                                    <div className="mb-6 border p-4 rounded shadow">
-                                        {/* Access only the first diagram */}
-                                        {Array.isArray(diagrams[0].nodes) ? (
-                                            diagrams[0].nodes.map((node, nodeIndex) => {
-                                                const name = extractNodeNames(node);
+                                <div className="mb-6 border p-4 rounded shadow">
+                                    {diagrams[0].nodes
+                                        .filter((node) => validClassNames.includes(node.cls_ptr))
+                                        .map((node, index) => {
+                                            const name = extractNodeNames(node);
 
-                                                return (
-                                                    <div key={nodeIndex} className="mb-4">
-                                                        <h4 className="font-semibold mb-2">
-                                                            Node {nodeIndex + 1}: {name || " No name extracted"}
-                                                        </h4>
+                                            return (
+                                                <div key={index} className="mb-4">
+                                                    <h4 className="font-semibold mb-2">
+                                                        Node {index + 1}: {name}
+                                                    </h4>
 
-                                                        {name && (
-                                                            <input
-                                                                type="number"
-                                                                min="0"
-                                                                value={syntheticCounts[name] || 0}
-                                                                onChange={(e) => {
-                                                                    const newValue = parseInt(e.target.value, 10);
-                                                                    if (!isNaN(newValue) && newValue >= 0) {
-                                                                        updateValue(name, newValue);
-                                                                    }
-                                                                }}
-                                                                className="border border-gray-300 rounded px-2 py-1 w-32 mt-1"
-                                                                placeholder="Enter amount"
-                                                            />
-                                                        )}
-                                                    </div>
-                                                );
-                                            })
-                                        ) : (
-                                            <p className="text-red-500">No nodes found in the first diagram</p>
-                                        )}
-                                    </div>
-                                ) : (
-                                    <p className="text-red-500">No diagrams available</p>
-                                )}
+                                                    {name && (
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            value={syntheticCounts[name] || 0}
+                                                            onChange={(e) => {
+                                                                const newValue = parseInt(e.target.value, 10);
+                                                                if (!isNaN(newValue) && newValue >= 0) {
+                                                                    updateValue(name, newValue);
+                                                                }
+                                                            }}
+                                                            className="border border-gray-300 rounded px-2 py-1 w-32 mt-1"
+                                                            placeholder="Enter amount"
+                                                        />
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                </div>
                             </div>
-
-                            <h4 className="font-semibold mt-4 mb-2">Done Rendering First Diagram</h4>
                         </div>
                     )}
-
 
                 </form>
                 <Divider />
