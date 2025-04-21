@@ -20,7 +20,7 @@ import { useAtom } from "jotai";
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router";
 import Select from "react-select";
-
+ 
 type PrototypeInput = {
     name: string;
     description?: string;
@@ -29,7 +29,7 @@ type PrototypeInput = {
     metadata: Record<string, any>;
     database_hash?: string;
 };
-
+ 
 type PrototypeOutput = {
     id: string;
     name: string;
@@ -37,7 +37,7 @@ type PrototypeOutput = {
     system: string;
     running: boolean;
 };
-
+ 
 export const CreatePrototype: React.FC = () => {
     const [open, setOpen] = useAtom(createPrototypeAtom);
     const close = () => setOpen(false);
@@ -49,17 +49,18 @@ export const CreatePrototype: React.FC = () => {
     const [generationError, setGenerationError] = useState<string | null>(null);
     const [useAuthentication, setUseAuthentication] = useState(true);
     const [useSyntheticData, setUseSyntheticData] = useState(false); // New state for Synthetic Data
-    const [syntheticCounts, setSyntheticCounts] = useState<Record<string, number>>({}); //extra
+    const [syntheticCounts, setSyntheticCounts] = useState<Record<string, number>>({}); // state to store synthetic data counts
+    const [showSyntheticModal, setShowSyntheticModal] = useState(false); // modal state
     const [databaseHash, setDatabaseHash] = useState<string | null>(null);
     const [databasePrototypes, setDatabasePrototypes] = useState([]);
     const [selectedDatabasePrototype, setSelectedDatabasePrototype] = useState(null);
-
+ 
     useEffect(() => {
         if (isSuccessInterfaces && interfaces) {
             setSelectedInterfaces(interfaces.map((e) => ({ label: e.name, value: e })));
         }
     }, [interfaces, isSuccessInterfaces]);
-
+ 
     useEffect(() => {
         const computeHash = async () => {
             if (systemId && isSuccessInterfaces) {
@@ -67,17 +68,17 @@ export const CreatePrototype: React.FC = () => {
                     authAxios.get(`v1/metadata/systems/${systemId}/classes/`),
                     authAxios.get(`v1/metadata/systems/${systemId}/classifier-relations/`),
                 ]);
-
+ 
                 const interfaceNames = interfaces.map((e) => ({ name: e.name }));
                 const inputString = `${systemId}${JSON.stringify(classifiers.data)}${JSON.stringify(relations.data)}${JSON.stringify(interfaceNames)}`;
                 const hash = CryptoJS.SHA256(inputString).toString(CryptoJS.enc.Hex);
                 setDatabaseHash(hash);
             }
         };
-
+ 
         computeHash();
     }, [systemId, interfaces, isSuccessInterfaces]);
-
+ 
     useEffect(() => {
         const fetchDatabasePrototypes = async () => {
             if (databaseHash) {
@@ -89,10 +90,10 @@ export const CreatePrototype: React.FC = () => {
                 }
             }
         };
-
+ 
         fetchDatabasePrototypes();
     }, [databaseHash]);
-
+ 
     const { mutateAsync, isPending } = useMutation<
         PrototypeOutput,
         unknown,
@@ -120,18 +121,18 @@ export const CreatePrototype: React.FC = () => {
                 });
                 return data
             }
-
+ 
         },
         onError: (error) => {
             setGenerationError("An error occurred while creating the prototype!");
         },
     });
-
+ 
     const queryClient = useQueryClient();
     const onSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
         e.preventDefault();
         setError(null);
-
+ 
         const formData = new FormData(e.currentTarget);
         const name = `${formData.get("name")}`.trim();
         const description = `${formData.get("description")}`;
@@ -143,18 +144,18 @@ export const CreatePrototype: React.FC = () => {
             "useSyntheticData": useSyntheticData,
             "syntheticCounts": syntheticCounts,
         };
-
+ 
         const alphanumericRegex = /^[a-zA-Z0-9]+$/;
         if (!alphanumericRegex.test(name)) {
             setError("Name may only contain alphanumeric characters!");
             return;
         }
-
+ 
         if (!databaseHash) {
             setError("No database hash.");
             return;
         }
-
+ 
         mutateAsync({
             name,
             description,
@@ -169,7 +170,7 @@ export const CreatePrototype: React.FC = () => {
             console.log(err)
         });
     };
-
+ 
     if (isPending) {
         return (
             <Modal open>
@@ -182,19 +183,19 @@ export const CreatePrototype: React.FC = () => {
             </Modal>
         );
     }
-
+ 
     const hasName = (obj: any): obj is { name: string } => {
         return obj && typeof obj.name === 'string';
     };
-
+ 
     const extractNodeNames = (node: any) => {
         // Loop through all properties of the node (cls, enum, etc.)
         const subObjectWithName = Object.values(node).find((sub) => hasName(sub));
-
+ 
         return subObjectWithName ? subObjectWithName.name : null;
     };
-
-
+ 
+ 
     // Update synthetic data counts
     const updateValue = (name: string, value: number) => {
         setSyntheticCounts((prev) => ({
@@ -202,12 +203,11 @@ export const CreatePrototype: React.FC = () => {
             [name]: value, // Update the value for the specified name
         }));
     };
-
+ 
     const validClassNames =
         interfaces[0]?.data?.sections?.map((section) => section.class) || [];
-
-
-    return (
+return (
+    <>
         <Modal open={open} onClose={() => { close(); setGenerationError(null) }}>
             <ModalDialog>
                 <div className="flex w-full flex-row justify-between pb-1">
@@ -216,17 +216,12 @@ export const CreatePrototype: React.FC = () => {
                         <h3 className="text-sm">Generate a new prototype using current metadata</h3>
                     </div>
                     <ModalClose
-                        sx={{
-                            position: "relative",
-                            top: 0,
-                            right: 0,
-                        }}
+                        sx={{ position: "relative", top: 0, right: 0 }}
                     />
                 </div>
                 <Divider />
                 <form
                     id="create-project"
-                    // className="flex min-w-96 flex-col gap-2"
                     className="max-h-[400px] overflow-y-auto pr-2"
                     onSubmit={onSubmit}
                 >
@@ -241,10 +236,7 @@ export const CreatePrototype: React.FC = () => {
                     </FormControl>
                     <FormControl>
                         <FormLabel>Description</FormLabel>
-                        <Input
-                            name="description"
-                            placeholder="A whole new world..."
-                        />
+                        <Input name="description" placeholder="A whole new world..." />
                     </FormControl>
                     <FormControl>
                         <FormLabel>Interfaces</FormLabel>
@@ -255,15 +247,6 @@ export const CreatePrototype: React.FC = () => {
                             value={selectedInterfaces}
                             onChange={(newValue) => setSelectedInterfaces(newValue ? newValue.map((v) => v.value) : [])}
                         />
-
-                        {/* <pre className="max-h-[400px] overflow-y-auto pr-2 bg-gray-100 p-2 rounded text-sm">
-                            {JSON.stringify(
-                                interfaces[0]?.data?.sections?.map((section) => section.class),
-                                null,
-                                2
-                            )}
-                        </pre> */}
-
                     </FormControl>
                     <FormControl>
                         <FormLabel>Reuse database</FormLabel>
@@ -284,81 +267,30 @@ export const CreatePrototype: React.FC = () => {
                         </span>
                     </FormControl>
                     <FormControl>
+                    <div className="flex flex-col gap-1">
                         <span className="flex flex-row items-center gap-2">
                             <Switch
                                 checked={useSyntheticData}
-                                onChange={(e) => setUseSyntheticData(e.target.checked)}  // synthetic data generation button 
+                                onChange={(e) => {
+                                    const checked = e.target.checked;
+                                    setUseSyntheticData(checked); // synthetic data generation button 
+                                    if (checked) setShowSyntheticModal(true); // opens the new window for synthetic data
+                                }}
                             />
                             <FormLabel sx={{ marginTop: '4px' }}>Use Synthetic Data</FormLabel>
                         </span>
-                    </FormControl>
-
-                    {useSyntheticData && (
-                        <div className="mt-4">
-                            <h4 className="font-semibold mb-2">Specify Synthetic Data Amount Per Node:</h4>
-
-                            {/* <pre className="max-h-[400px] overflow-y-auto pr-2 bg-gray-100 p-2 rounded text-sm">
-                                {JSON.stringify(
-                                    diagrams[0]?.nodes?.map((node) => node.cls_ptr),
-                                    null,
-                                    2
-                                )}
-                            </pre> */}
-                            {/* 
-                            <pre className="max-h-[400px] overflow-y-auto pr-2 bg-gray-100 p-2 rounded text-sm">
-                                {JSON.stringify(
-                                    diagrams[0],
-                                    null,
-                                    2
-                                )}
-                            </pre> */}
-
-                            {/* Scrollable content */}
-                            <div className="max-h-[400px] overflow-y-auto pr-2">
-                                <div className="mb-6 border p-4 rounded shadow">
-                                    {diagrams[0].nodes
-                                        .filter((node) => validClassNames.includes(node.cls_ptr))
-                                        .map((node, index) => {
-                                            const name = extractNodeNames(node);
-
-                                            return (
-                                                <div key={index} className="mb-4">
-                                                    <h4 className="font-semibold mb-2">
-                                                        Node {index + 1}: {name}
-                                                    </h4>
-
-                                                    {name && (
-                                                        <input
-                                                            type="number"
-                                                            min="0"
-                                                            value={syntheticCounts[name] || 0}
-                                                            onChange={(e) => {
-                                                                const newValue = parseInt(e.target.value, 10);
-                                                                if (!isNaN(newValue) && newValue >= 0) {
-                                                                    updateValue(name, newValue);
-                                                                }
-                                                            }}
-                                                            className="border border-gray-300 rounded px-2 py-1 w-32 mt-1"
-                                                            placeholder="Enter amount"
-                                                        />
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
+                    </div>
+                </FormControl>
                 </form>
                 <Divider />
                 <div className="flex flex-row pt-1">
                     <Button form="create-project" type="submit" disabled={isPending}>
-                        {isPending ?
+                        {isPending ? (
                             <div className="flex flex-row gap-2">
                                 <CircularProgress className="animate-spin" />
                                 <p>Generating</p>
-                            </div> : "Create"}
+                            </div>
+                        ) : "Create"}
                     </Button>
                 </div>
                 {generationError && (
@@ -368,6 +300,53 @@ export const CreatePrototype: React.FC = () => {
                 )}
             </ModalDialog>
         </Modal>
+ 
+        {/* Synthetic Data Popup Modal */}
+        <Modal open={showSyntheticModal} onClose={() => setShowSyntheticModal(false)}>
+            <ModalDialog>
+              <Typography level="h4">Specify Synthetic Data Amount Per Node</Typography>
+                <div className="max-h-[400px] overflow-y-auto pr-2 mt-2">
+                    <div className="mb-6 border p-4 rounded shadow">
+                    {isSuccessInterfaces && interfaces.length === 0 ? ( // warns user that they forgot to add interfaces
+                        <Typography sx={{ marginTop: '4px', marginBottom: '8px' }}>
+                            <span className="text-sm text-orange-600">
+                                No interfaces found. Please define at least one interface for this system in order to proceed with synthetic data generation.
+                            </span>
+                        </Typography>
+                    ) : (
+                        diagrams[0]?.nodes
+                            ?.filter((node) => validClassNames.includes(node.cls_ptr))
+                            .map((node, index) => {
+                                const name = extractNodeNames(node);
+                                return (
+                                    <div key={index} className="mb-4">
+                                        <h4 className="font-semibold mb-2">Node {index + 1}: {name}</h4>
+                                        {name && (
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                value={syntheticCounts[name] || 0}
+                                                onChange={(e) => {
+                                                    const newValue = parseInt(e.target.value, 10);
+                                                    if (!isNaN(newValue) && newValue >= 0) {
+                                                        updateValue(name, newValue);
+                                                    }
+                                                }}
+                                                className="border border-gray-300 rounded px-2 py-1 w-32 mt-1"
+                                                placeholder="Enter amount"
+                                            />
+                                        )}
+                                    </div>
+                                );
+                            })
+                    )}
+                </div>
+            </div>
+            <Button onClick={() => setShowSyntheticModal(false)}>Done</Button>
+        </ModalDialog>
+    </Modal>
+ 
+        </>
     );
 };
 
