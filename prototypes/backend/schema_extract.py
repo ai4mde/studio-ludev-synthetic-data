@@ -7,7 +7,6 @@ from django.apps import apps
 from django.db.models import ForeignKey, OneToOneField
 import requests
 from graphlib import TopologicalSorter
-from openai import OpenAI
 ##############################################
 
 # PLEASE PUT YOUR GROQ API KEY IN THE call_groq FUNCTION BELOW
@@ -35,25 +34,6 @@ def call_groq(prompt: str, model: str = 'llama-3.3-70b-versatile') -> str:
         return response.json()["choices"][0]["message"]["content"]
     except Exception as e:
         raise Exception("Failed to call Groq LLM: " + str(e))
-    
-def call_openai(prompt: str, model: str = 'gpt-4o-mini') -> str:
-    client = OpenAI(
-        api_key="",
-    )
-    try:
-         chat_completion = client.chat.completions.create(
-             messages=[
-                 {
-                     "role": "user",
-                     "content": prompt,
-                 }
-             ],
-             model=model,
-         )
-         return chat_completion.choices[0].message.content
-    except Exception as e:
-         raise Exception("Failed to call LLM, error " + str(e))
-
 
 def setup_django(PROTOTYPE_NAME, SYSTEM):
     print("my name is:", PROTOTYPE_NAME)
@@ -149,25 +129,9 @@ def save_records(model_class, synthetic_data, model_name, name_to_id_to_id_mappi
                 continue
             try:
                 field = model_class._meta.get_field(field_name)
-                # print("insterting: ", field_name, " into field:", model_name)
-                # print(field)
-                # print(f"Field class: {field.__class__.__name__}")
-                # if isinstance(field, (ForeignKey, OneToOneField)):
-                #     print(f"Field {field_name} is recognized as ForeignKey or OneToOneField")
-                #     related_model = field.remote_field.model
-                #     print(related_model)
-                #     related_instance = related_model.objects.get(id=1)
-                #     print(related_instance)
-                # else:
-                #     print(f"Field {field_name} is not ForeignKey or OneToOneField")
                 if isinstance(field, (ForeignKey, OneToOneField)):
                     related_model = field.remote_field.model
-                    # print("RECOG!:", related_model)
-                    # print(" I think the id the foreign key should be: ", name_to_id_to_id_mapping_mapping[field_name][str(field_value)])
                     related_instance = related_model.objects.get(id=name_to_id_to_id_mapping_mapping[field_name][str(field_value)])
-                    # print(name_to_id_to_id_mapping_mapping[field_name])
-                    # print(name_to_id_to_id_mapping_mapping[field_name][str(field_value)])
-                    # print(related_instance)
                     setattr(instance, field_name, related_instance)
                 else:
                     setattr(instance, field_name, field_value)
@@ -215,39 +179,14 @@ def main(PROTOTYPE_NAME, SYSTEM, N_RECORDS):
     for model_name in insert_order:
         model_class = next((m for m in models if m.__name__ == model_name), None)
         if not model_class:
-            print(f"Model {model_name} not found in models")
             continue
 
-        print("for this im gonna use the following name to id id map map:", name_to_id_to_id_mapping_mapping)
         id_to_id_mapping = save_records(model_class, total_json[model_name], model_name, name_to_id_to_id_mapping_mapping)
         name_to_id_to_id_mapping_mapping[model_name] = id_to_id_mapping
-        print(model_name, "Map", id_to_id_mapping)
-
-
-
-
-
-    # for synthetic_data_array in total_json:
-    #     print(synthetic_data_array)
-        # for m in models:
-        #     if m.__name__ == synthetic_data_array[0]:
-        #         # save_records(m,synthetic_data_array[1],m.__name__)
-        #         print(m.__name__, synthetic_data_array[1])
-
-
-        # try:
-        #     synthetic_data = extract_json_from_response(llm_response)
-        #     print(f"Successfully parsed {len(synthetic_data)} records for {model_name}")
-        #     save_records(model_class, synthetic_data, model_name)
-        # except json.JSONDecodeError as e:
-        #     print(f"Failed to parse JSON from LLM response: {e}")
-        #     print(f"Raw response: {llm_response}")
-        # except Exception as e:
-        #     print(f"Error generating synthetic data for {model_name}: {e}")
 
 if __name__ == "__main__":
     PROTOTYPE_NAME = sys.argv[1]
     SYSTEM = sys.argv[2]
-    N_RECORDS = 50
+    N_RECORDS = 9
 
     main(PROTOTYPE_NAME, SYSTEM, N_RECORDS)
