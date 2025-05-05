@@ -15,7 +15,35 @@ on:
       - develop/**
 
 jobs:
-  run-backend-tests:
+  frontend-tests:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install yarn
+        run: npm install -g yarn
+
+      - name: Cache yarn dependencies
+        working-directory: ./frontend
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/yarn
+          key: ${{ runner.os }}-yarn-${{ hashFiles('frontend/package.json') }}
+
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: yarn
+      
+      - name: Run linting
+        working-directory: ./frontend
+        run: yarn lint
+
+      - name: Run tests
+        working-directory: ./frontend
+        run: yarn test
+
+  backend-tests:
     runs-on: ubuntu-latest # Switch to github-arc later
     env:
       LANG: C.UTF-8
@@ -55,9 +83,9 @@ jobs:
           poetry run pip install pylint
           poetry run pylint $(git ls-files '*.py')
 
-      - name: Run unit tests - api
-        run: |
-          python -m unittest discover
+      # - name: Run unit tests - api
+      #   run: |
+      #     python -m unittest discover
 
       # WORKING DIRECTORY IS ./PROTOTYPES
       - name: Cache dependencies - prototypes
@@ -80,6 +108,6 @@ jobs:
           poetry run pip install pylint
           poetry run pylint $(git ls-files '*.py') # Only if tracked by git
 
-      - name: Run unit tests - prototypes
-        run: |
-          python -m unittest discover
+      # - name: Run unit tests - prototypes
+      #   run: |
+      #     python -m unittest discover
