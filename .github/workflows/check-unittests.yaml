@@ -41,7 +41,6 @@ jobs:
         with:
           path: ~/.cache/pypoetry
           key: ${{ runner.os }}-poetry-${{ hashFiles('api/poetry.lock', 'api/pyproject.toml') }}
-          # key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-poetry-
 
@@ -49,8 +48,6 @@ jobs:
         working-directory: ./api
         run: |
           poetry install --no-root |& cat
-        # python -m pip install --upgrade pip
-        # if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       
       - name: Run Pylint - api
         working-directory: ./api
@@ -69,7 +66,6 @@ jobs:
         with:
           path: ~/.cache/pypoetry
           key: ${{ runner.os }}-poetry-${{ hashFiles('prototypes/poetry.lock', 'prototypes/pyproject.toml') }}
-          # key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-poetry-
 
@@ -77,8 +73,6 @@ jobs:
         working-directory: ./prorotypes
         run: |
           poetry install --no-root |& cat
-        # python -m pip install --upgrade pip
-        # if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       
       - name: Run Pylint - prototypes
         working-directory: ./prototypes
