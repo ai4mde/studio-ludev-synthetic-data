@@ -20,7 +20,7 @@ import { useAtom } from "jotai";
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router";
 import Select from "react-select";
- 
+
 type PrototypeInput = {
     name: string;
     description?: string;
@@ -29,7 +29,7 @@ type PrototypeInput = {
     metadata: Record<string, any>;
     database_hash?: string;
 };
- 
+
 type PrototypeOutput = {
     id: string;
     name: string;
@@ -37,7 +37,7 @@ type PrototypeOutput = {
     system: string;
     running: boolean;
 };
- 
+
 export const CreatePrototype: React.FC = () => {
     const [open, setOpen] = useAtom(createPrototypeAtom);
     const close = () => setOpen(false);
@@ -55,13 +55,13 @@ export const CreatePrototype: React.FC = () => {
     const [databaseHash, setDatabaseHash] = useState<string | null>(null);
     const [databasePrototypes, setDatabasePrototypes] = useState([]);
     const [selectedDatabasePrototype, setSelectedDatabasePrototype] = useState(null);
- 
+
     useEffect(() => {
         if (isSuccessInterfaces && interfaces) {
             setSelectedInterfaces(interfaces.map((e) => ({ label: e.name, value: e })));
         }
     }, [interfaces, isSuccessInterfaces]);
- 
+
     useEffect(() => {
         const computeHash = async () => {
             if (systemId && isSuccessInterfaces) {
@@ -69,17 +69,17 @@ export const CreatePrototype: React.FC = () => {
                     authAxios.get(`v1/metadata/systems/${systemId}/classes/`),
                     authAxios.get(`v1/metadata/systems/${systemId}/classifier-relations/`),
                 ]);
- 
+
                 const interfaceNames = interfaces.map((e) => ({ name: e.name }));
                 const inputString = `${systemId}${JSON.stringify(classifiers.data)}${JSON.stringify(relations.data)}${JSON.stringify(interfaceNames)}`;
                 const hash = CryptoJS.SHA256(inputString).toString(CryptoJS.enc.Hex);
                 setDatabaseHash(hash);
             }
         };
- 
+
         computeHash();
     }, [systemId, interfaces, isSuccessInterfaces]);
- 
+
     useEffect(() => {
         const fetchDatabasePrototypes = async () => {
             if (databaseHash) {
@@ -91,10 +91,10 @@ export const CreatePrototype: React.FC = () => {
                 }
             }
         };
- 
+
         fetchDatabasePrototypes();
     }, [databaseHash]);
- 
+
     const { mutateAsync, isPending } = useMutation<
         PrototypeOutput,
         unknown,
@@ -122,18 +122,18 @@ export const CreatePrototype: React.FC = () => {
                 });
                 return data
             }
- 
+
         },
         onError: (error) => {
             setGenerationError("An error occurred while creating the prototype!");
         },
     });
- 
+
     const queryClient = useQueryClient();
     const onSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
         e.preventDefault();
         setError(null);
- 
+
         const formData = new FormData(e.currentTarget);
         const name = `${formData.get("name")}`.trim();
         const description = `${formData.get("description")}`;
@@ -146,18 +146,18 @@ export const CreatePrototype: React.FC = () => {
             "syntheticCounts": syntheticCounts,
             "syntheticInstructions": syntheticInstructions,
         };
- 
+
         const alphanumericRegex = /^[a-zA-Z0-9]+$/;
         if (!alphanumericRegex.test(name)) {
             setError("Name may only contain alphanumeric characters!");
             return;
         }
- 
+
         if (!databaseHash) {
             setError("No database hash.");
             return;
         }
- 
+
         mutateAsync({
             name,
             description,
@@ -172,7 +172,7 @@ export const CreatePrototype: React.FC = () => {
             console.log(err)
         });
     };
- 
+
     if (isPending) {
         return (
             <Modal open>
@@ -185,19 +185,19 @@ export const CreatePrototype: React.FC = () => {
             </Modal>
         );
     }
- 
+
     const hasName = (obj: any): obj is { name: string } => {
         return obj && typeof obj.name === 'string';
     };
- 
+
     const extractNodeNames = (node: any) => {
         // Loop through all properties of the node (cls, enum, etc.)
         const subObjectWithName = Object.values(node).find((sub) => hasName(sub));
- 
+
         return subObjectWithName ? subObjectWithName.name : null;
     };
- 
- 
+
+
     // Update synthetic data counts
     const updateValue = (name: string, value: number) => {
         setSyntheticCounts((prev) => ({
@@ -205,9 +205,11 @@ export const CreatePrototype: React.FC = () => {
             [name]: value, // Update the value for the specified name
         }));
     };
- 
+
     const validClassNames =
         interfaces[0]?.data?.sections?.map((section) => section.class) || [];
+
+
     return (
         <>
             <Modal open={open} onClose={() => { close(); setGenerationError(null) }}>
@@ -302,66 +304,76 @@ export const CreatePrototype: React.FC = () => {
                     )}
                 </ModalDialog>
             </Modal>
- 
+
             {/* Synthetic Data Popup Modal */}
             <Modal open={showSyntheticModal} onClose={() => setShowSyntheticModal(false)}>
                 <ModalDialog>
                     <Typography level="h4">Specify Synthetic Data Amount Per Node</Typography>
- 
-                    {/*Custom instructions for synthetic data generation*/}
-                    <FormControl className="mt-4">
-                        <FormLabel>Custom Instructions</FormLabel>
-                        <Input
-                            placeholder="e.g., 10 samples per user with real names"
-                            value={syntheticInstructions}
-                            onChange={(e) => setSyntheticInstructions(e.target.value)}
-                        />
-                    </FormControl>
- 
-                    <div className="max-h-[400px] overflow-y-auto pr-2 mt-2">
-                        <div className="mb-6 border p-4 rounded shadow">
-                            {isSuccessInterfaces && interfaces.length === 0 ? ( // warns user that they forgot to add interfaces
-                                <Typography sx={{ marginTop: '4px', marginBottom: '8px' }}>
-                                    <span className="text-sm text-orange-600">
-                                        No interfaces found. Please define at least one interface for this system in order to proceed with synthetic data generation.
-                                    </span>
-                                </Typography>
-                            ) : (
-                                diagrams[0]?.nodes
-                                    ?.filter((node) => validClassNames.includes(node.cls_ptr))
-                                    .map((node, index) => {
-                                        const name = extractNodeNames(node);
-                                        return (
-                                            <div key={index} className="mb-4">
-                                                <h4 className="font-semibold mb-2">Node {index + 1}: {name}</h4>
-                                                {name && (
-                                                    <input
-                                                        type="number"
-                                                        min="0"
-                                                        value={syntheticCounts[name] || 0}
-                                                        onChange={(e) => {
-                                                            const newValue = parseInt(e.target.value, 10);
-                                                            if (!isNaN(newValue) && newValue >= 0) {
-                                                                updateValue(name, newValue);
-                                                            }
-                                                        }}
-                                                        className="border border-gray-300 rounded px-2 py-1 w-32 mt-1"
-                                                        placeholder="Enter amount"
-                                                    />
-                                                )}
-                                            </div>
-                                        );
-                                    })
-                            )}
-                        </div>
-                    </div>
+                    {!interfaces[0]?.data?.pages?.sections || interfaces[0]?.data?.pages?.sections.length === 0 ? (
+                        <Typography sx={{ marginTop: '4px', marginBottom: '8px' }}>
+                            <span className="text-sm text-orange-600">
+                                No section components found in pages. Please define at least one section component for this system in order to proceed with synthetic data generation.
+                            </span>
+                        </Typography>
+                    ) : (
+                        <>
+                            {/*Custom instructions for synthetic data generation*/}
+                            <FormControl className="mt-4">
+                                <FormLabel>Custom Instructions</FormLabel>
+                                <Input
+                                    placeholder="e.g., 10 samples per user with real names"
+                                    value={syntheticInstructions}
+                                    onChange={(e) => setSyntheticInstructions(e.target.value)}
+                                />
+                            </FormControl>
+
+                            <div className="max-h-[400px] overflow-y-auto pr-2 mt-2">
+                                <div className="mb-6 border p-4 rounded shadow">
+                                    {!interfaces[0]?.data?.pages?.sections || interfaces[0]?.data?.pages?.sections.length === 0 ? ( // warns user that they forgot to add interfaces
+                                        <Typography sx={{ marginTop: '4px', marginBottom: '8px' }}>
+                                            <span className="text-sm text-orange-600">
+                                                No section components found in pages. Please define at least one section component for this system in order to proceed with synthetic data generation.
+                                            </span>
+                                        </Typography>
+                                    ) : (
+                                        diagrams[0]?.nodes
+                                            ?.filter((node) => validClassNames.includes(node.cls_ptr))
+                                            .map((node, index) => {
+                                                const name = extractNodeNames(node);
+                                                return (
+                                                    <div key={index} className="mb-4">
+                                                        <h4 className="font-semibold mb-2">Node {index + 1}: {name}</h4>
+                                                        {name && (
+                                                            <input
+                                                                type="number"
+                                                                min="0"
+                                                                value={syntheticCounts[name] || 0}
+                                                                onChange={(e) => {
+                                                                    const newValue = parseInt(e.target.value, 10);
+                                                                    if (!isNaN(newValue) && newValue >= 0) {
+                                                                        updateValue(name, newValue);
+                                                                    }
+                                                                }}
+                                                                className="border border-gray-300 rounded px-2 py-1 w-32 mt-1"
+                                                                placeholder="Enter amount"
+                                                            />
+                                                        )}
+                                                    </div>
+                                                );
+                                            })
+                                    )}
+                                </div>
+                            </div>
+                        </>
+                    )}
                     <Button onClick={() => setShowSyntheticModal(false)}>Done</Button>
+
                 </ModalDialog>
             </Modal>
- 
- 
+
+
         </>
     );
 };
- 
+
 export default CreatePrototype;
