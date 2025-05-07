@@ -250,13 +250,23 @@ export const CreatePrototype: React.FC = () => {
         let isValid = true;
         let errorMessage = '';
 
+        const hasValidNodes = diagrams[0]?.nodes?.some(node =>
+            validClassNames.includes(node.cls_ptr)
+        );
+
+        if (!hasValidNodes) {
+            setUseSyntheticData(false);
+            setShowSyntheticModal(false);
+            return;
+        }
+
         rules.forEach(({ sourceName, targetName, rule }) => {
             const sourceCount = syntheticCounts[sourceName] ?? 0;
             const targetCount = syntheticCounts[targetName] ?? 0;
 
-            if (rule === 'le') { // One to mamny relation
+            if (rule === 'le') { // One to manny relation
                 if (targetCount !== 0 && sourceCount === 0) {
-                    errorMessage = `${targetName} must have one ${sourceName}`;
+                    errorMessage = `${sourceName} should have at least 1, due to one-to-many associoation with target ${targetName}`;
                     isValid = false;
                 }
 
@@ -267,16 +277,16 @@ export const CreatePrototype: React.FC = () => {
 
             } else if (rule === 'ge') { // many to one relation
                 if (targetCount === 0 && sourceCount !== 0) {
-                    errorMessage = `${targetName} must have one ${sourceName}`;
+                    errorMessage = `${targetName} should have at least 1, due to many-to-one associoation with source ${sourceName}`;
                     isValid = false;
                 }
 
-                else if (sourceCount < targetCount) { // One to one relation
+                else if (sourceCount < targetCount) {
                     errorMessage = `${sourceName} must be greater than or equal to ${targetName}`;
                     isValid = false;
                 }
 
-            } else if (rule === 'eq' && sourceCount !== targetCount) {
+            } else if (rule === 'eq' && sourceCount !== targetCount) { // One to one relation
                 isValid = false;
                 errorMessage = `${sourceName} must have the same count as ${targetName}`;
             }
