@@ -206,8 +206,89 @@ export const CreatePrototype: React.FC = () => {
         }));
     };
 
-    const validClassNames =
-        interfaces[0]?.data?.sections?.map((section) => section.class) || [];
+    const validClassNames = interfaces[0]?.data?.sections?.map((section) => section.class) || [];
+
+    const getMultiplicityRules = (): {
+        sourceName: string;
+        targetName: string;
+        rule: 'le' | 'ge' | 'eq';
+    }[] => {
+        if (!diagrams?.[0]?.edges || !diagrams?.[0]?.nodes) return [];
+
+        const nodesById = Object.fromEntries(
+            diagrams[0].nodes.map(node => [node.id, extractNodeNames(node)])
+        );
+
+        return diagrams[0].edges
+            .filter(edge => edge.rel?.multiplicity)
+            .map(edge => {
+                const { multiplicity } = edge.rel;
+                const sourceName = nodesById[edge.source_ptr];
+                const targetName = nodesById[edge.target_ptr];
+
+                if (!sourceName || !targetName) return null;
+
+                const srcMult = multiplicity.source;
+                const tgtMult = multiplicity.target;
+
+                let rule: 'le' | 'ge' | 'eq' | null = null;
+                if (srcMult === "1" && tgtMult === "1") rule = 'eq';
+                else if (srcMult === "1" && tgtMult === "*") rule = 'le';
+                else if (srcMult === "*" && tgtMult === "1") rule = 'ge';
+
+                return rule ? { sourceName, targetName, rule } : null;
+            })
+            .filter(Boolean) as {
+                sourceName: string;
+                targetName: string;
+                rule: 'le' | 'ge' | 'eq';
+            }[];
+    };
+
+    const handleSyntheticValidation = () => {
+        const rules = getMultiplicityRules();
+        let isValid = true;
+        let errorMessage = '';
+
+        rules.forEach(({ sourceName, targetName, rule }) => {
+            const sourceCount = syntheticCounts[sourceName] ?? 0;
+            const targetCount = syntheticCounts[targetName] ?? 0;
+
+            if (rule === 'le') { // One to mamny relation
+                if (targetCount !== 0 && sourceCount === 0) {
+                    errorMessage = `${targetName} must have one ${sourceName}`;
+                    isValid = false;
+                }
+
+                else if (sourceCount > targetCount && targetCount !== 0) {
+                    errorMessage = `${sourceName} must be less than or equal to ${targetName}`;
+                    isValid = false;
+                }
+
+            } else if (rule === 'ge') { // many to one relation
+                if (targetCount === 0 && sourceCount !== 0) {
+                    errorMessage = `${targetName} must have one ${sourceName}`;
+                    isValid = false;
+                }
+
+                else if (sourceCount < targetCount) { // One to one relation
+                    errorMessage = `${sourceName} must be greater than or equal to ${targetName}`;
+                    isValid = false;
+                }
+
+            } else if (rule === 'eq' && sourceCount !== targetCount) {
+                isValid = false;
+                errorMessage = `${sourceName} must have the same count as ${targetName}`;
+            }
+        });
+
+        if (isValid) {
+            setGenerationError(null);
+            setShowSyntheticModal(false);
+        } else {
+            setGenerationError(errorMessage);
+        }
+    };
 
 
     return (
@@ -309,7 +390,12 @@ export const CreatePrototype: React.FC = () => {
             <Modal open={showSyntheticModal} onClose={() => setShowSyntheticModal(false)}>
                 <ModalDialog>
                     <Typography level="h4">Specify Synthetic Data Amount Per Node</Typography>
-                    {!interfaces[0]?.data?.pages?.sections || interfaces[0]?.data?.pages?.sections.length === 0 ? (
+                    {generationError && (
+                        <Typography sx={{ margin: '2px' }}>
+                            <h1 className="text-lg text-red-800">{generationError}</h1>
+                        </Typography>
+                    )}
+                    {!interfaces[0]?.data?.sections || interfaces[0]?.data?.sections.length === 0 ? (
                         <Typography sx={{ marginTop: '4px', marginBottom: '8px' }}>
                             <span className="text-sm text-orange-600">
                                 No section components found in pages. Please define at least one section component for this system in order to proceed with synthetic data generation.
@@ -329,15 +415,8 @@ export const CreatePrototype: React.FC = () => {
 
                             <div className="max-h-[400px] overflow-y-auto pr-2 mt-2">
                                 <div className="mb-6 border p-4 rounded shadow">
-                                    {!interfaces[0]?.data?.pages?.sections || interfaces[0]?.data?.pages?.sections.length === 0 ? ( // warns user that they forgot to add interfaces
-                                        <Typography sx={{ marginTop: '4px', marginBottom: '8px' }}>
-                                            <span className="text-sm text-orange-600">
-                                                No section components found in pages. Please define at least one section component for this system in order to proceed with synthetic data generation.
-                                            </span>
-                                        </Typography>
-                                    ) : (
-                                        diagrams[0]?.nodes
-                                            ?.filter((node) => validClassNames.includes(node.cls_ptr))
+                                    {
+                                        diagrams[0]?.nodes?.filter((node) => validClassNames.includes(node.cls_ptr))
                                             .map((node, index) => {
                                                 const name = extractNodeNames(node);
                                                 return (
@@ -361,12 +440,12 @@ export const CreatePrototype: React.FC = () => {
                                                     </div>
                                                 );
                                             })
-                                    )}
+                                    }
                                 </div>
                             </div>
                         </>
                     )}
-                    <Button onClick={() => setShowSyntheticModal(false)}>Done</Button>
+                    <Button onClick={handleSyntheticValidation}>Done</Button>
 
                 </ModalDialog>
             </Modal>
