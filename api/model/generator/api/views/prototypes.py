@@ -69,6 +69,26 @@ def create_prototype(request, prototype: CreatePrototype, database_prototype_nam
 
     return new_prototype
 
+@prototypes.post("/{uuid:id}/", response=bool)
+def test_create_prototype(request, id):
+
+    prototype = Prototype.objects.get(id=id)
+
+    GENERATION_URL = f"{PROTOTYPE_API_URL}/generate"
+    data = {
+        'id': str(prototype.id),
+        'name': prototype.name,
+        'system': str(prototype.system.id),
+        'metadata': json.dumps(prototype.metadata)
+    }
+    
+    response = requests.post(GENERATION_URL, json=data)
+
+    if response.status_code != 200:
+        raise Exception("Failed to generate prototype " + prototype.name)
+
+    return True
+
 
 @prototypes.delete("/{uuid:id}/", response=bool)
 def delete_prototype(request, id):
