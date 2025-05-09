@@ -6,9 +6,9 @@ from uuid import uuid4
 
 PROTOTYPE_API = "http://localhost:8010" 
 
-PROTOTYPE_ID = uuid4()
+PROTOTYPE_ID = str(uuid4())
 PROTOTYPE_NAME = "Test prototype"
-PROTOTYPE_SYSTEM = uuid4()
+PROTOTYPE_SYSTEM = str(uuid4())
 PROTOTYPE_METADATA = {
     "diagrams": [
         {
@@ -176,8 +176,37 @@ class SyntheticDataTests(unittest.TestCase):
         })
         assert response.status_code == 200, f"Teardown failed: {response.text}"
 
-    def test_make_prompt(self):
-        print("TODO")
+    def test_make_prompt_correct_model(self):
+        response = schema_extract.make_synthetic_data_prompt([{'model_name': 'Manufacturer', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, {'name': 'name1', 'type': 'CharField', 'choices': None}, {'name': 'age1', 'type': 'IntegerField', 'choices': None}]}], 3)
+        assert type(response) == str, f"make prompt correct_model failed: {response}"
+
+    def test_make_prompt_correct_multiple_models(self):
+        response = schema_extract.make_synthetic_data_prompt([{'model_name': 'Delivery', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, {'name': 'name', 'type': 'CharField', 'choices': None}, {'name': 'licence1', 'type': 'IntegerField', 'choices': None}, {'name': 'Manufacturer', 'type': 'ForeignKey', 'choices': None}]}, {'model_name': 'Manufacturer', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, {'name': 'name1', 'type': 'CharField', 'choices': None}, {'name': 'age1', 'type': 'IntegerField', 'choices': None}]}, {'model_name': 'Person10', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, {'name': 'name10', 'type': 'CharField', 'choices': None}, {'name': 'age10', 'type': 'IntegerField', 'choices': None}]}], 3)
+        assert type(response) == str, f"make prompt multiple_models failed: {response}"
+
+    def test_make_prompt_incorrect_model(self):
+        with self.assertRaises(ValueError):
+            schema_extract.make_synthetic_data_prompt([{'model_name': 'Manufacturer', 'fields': [{'name': 'id'}, {'name': 'age1', 'type': 'IntegerField', 'choices': None}]}], 3)
+        # assert type(response) != str, f"make prompt incorrect_model failed: {response}"
+
+    def test_make_prompt_incorrect_multiple_models(self):
+        with self.assertRaises(ValueError):
+            schema_extract.make_synthetic_data_prompt([{'model_name': 'Manufacturer', 'fields': [{'name': 'id'}, {'name': 'age1', 'type': 'IntegerField', 'choices': None}]}, {'model_name': 'Delivery', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, {'name': 'name', 'type': 'CharField', 'choices': None}, {'name': 'licence1', 'type': 'IntegerField', 'choices': None}, {'name': 'Manufacturer', 'type': 'ForeignKey', 'choices': None}]}, {'model_name': 'Person10', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, {'name': 'name10', 'type': 'CharField', 'choices': None}, {'name': 'age10', 'type': 'IntegerField', 'choices': None}]}], 3)
+        # assert type(response) != str, f"make prompt multiple_incorrect_models failed: {response}"
+
+    def test_make_prompt_negative_nrecords(self):
+        with self.assertRaises(ValueError):
+            schema_extract.make_synthetic_data_prompt([{'model_name': 'Manufacturer', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, {'name': 'name1', 'type': 'CharField', 'choices': None}, {'name': 'age1', 'type': 'IntegerField', 'choices': None}]}], -3)
+        # assert type(response) == str, f"make prompt negative_nrecords failed: {response}"
+
+    def test_make_prompt_zero_nrecords(self):
+        with self.assertRaises(ValueError):
+            schema_extract.make_synthetic_data_prompt([{'model_name': 'Manufacturer', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, {'name': 'name1', 'type': 'CharField', 'choices': None}, {'name': 'age1', 'type': 'IntegerField', 'choices': None}]}], 0)
+
+    def test_make_prompt_no_fields(self):
+        with self.assertRaises(ValueError):
+            schema_extract.make_synthetic_data_prompt([], 3)
+
 
 if __name__ == '__main__':
     unittest.main()

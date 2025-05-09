@@ -117,7 +117,7 @@ def make_synthetic_data_prompt(model_definitions, N_RECORDS):
         
         required_keys = {'name', 'type', 'choices'}
         for field in fields:
-            if required_keys.issubset(field):
+            if field.keys() != required_keys:
                 raise ValueError
         
 
