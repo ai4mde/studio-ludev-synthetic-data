@@ -85,6 +85,14 @@ def toposort_models(models, hidden_models):
 
 
 def make_synthetic_data_prompt(model_definitions, N_RECORDS):
+    if N_RECORDS <= 0:
+        raise ValueError("Cannot prompt the LLM to generate no records or a negative amount of records")
+    
+    if len(model_definitions) == 0:
+        raise ValueError("No model definition provided")
+
+
+
     prompt = f"""
 
     You are going to generate synthetic sample data for a database based on Django model definitions.
@@ -96,6 +104,14 @@ def make_synthetic_data_prompt(model_definitions, N_RECORDS):
     """
 
     for model_def in model_definitions:
+
+        if not isinstance(model_def, dict):
+            raise ValueError("At least one model definition is not a dictionary")
+        if not isinstance(model_def.get("model_name"), str):
+            raise ValueError
+        if not isinstance(model_def.get("fields"), list):
+            raise ValueError
+
         model_name = model_def["model_name"]
         
         print(f"\nGenerating data for model: {model_name}")
