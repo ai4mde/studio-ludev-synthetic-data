@@ -109,8 +109,17 @@ def make_synthetic_data_prompt(model_definitions, N_RECORDS):
             raise ValueError("At least one model definition is not a dictionary")
         if not isinstance(model_def.get("model_name"), str):
             raise ValueError
-        if not isinstance(model_def.get("fields"), list):
+
+        fields = model_def.get("fields")
+
+        if not isinstance(fields, list):
             raise ValueError
+        
+        required_keys = {'name', 'type', 'choices'}
+        for field in fields:
+            if required_keys.issubset(field):
+                raise ValueError
+        
 
         model_name = model_def["model_name"]
         
