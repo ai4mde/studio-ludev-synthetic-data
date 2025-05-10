@@ -48,6 +48,21 @@ def use_synthetic_data_is_present(metadata: str) -> bool:
     
     return False
 
+
+def get_synthetic_instructions(metadata: str) -> str:
+    if metadata in ["", None]:
+        raise Exception("Metadata is empty")
+    metadata_json = json.loads(metadata)
+    return metadata_json.get("syntheticInstructions", "")
+
+
+def get_synthetic_counts(metadata: str) -> dict:
+    if metadata in ["", None]:
+        raise Exception("Metadata is empty")
+    metadata_json = json.loads(metadata)
+    return metadata_json.get("syntheticCounts", {})
+
+
 def get_enum_literals(metadata: str, class_id: str) -> List[str]:
     out = []
     for diagram in json.loads(metadata)["diagrams"]:
