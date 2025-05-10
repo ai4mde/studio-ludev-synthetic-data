@@ -62,7 +62,7 @@ def run_prototype():
     stop_prototype()
     data = request.json
     if data is None:
-        abort(400)
+        return "Missing JSON data in request body", 400
     id = data.get('id')
     name = data.get('name')
     system = data.get('system')
@@ -108,7 +108,7 @@ def generate_prototype():
     COPY_DATABASE_PATH = "/usr/src/prototypes/backend/generation/copy_database.sh"
     data = request.json
     if data is None:
-        abort(400)
+        return "Missing JSON data in request body", 400
     id = data.get('id')
     name = data.get('name')
     system = data.get('system')
@@ -138,7 +138,7 @@ def remove_prototype():
     REMOVER_PATH = "/usr/src/prototypes/backend/generation/remover.sh"  # TODO: put in env
     data = request.json
     if data is None:
-        abort(400)
+        return "Missing JSON data in request body", 400
     id = data.get('id')
     name = data.get('name')
     system = data.get('system')
