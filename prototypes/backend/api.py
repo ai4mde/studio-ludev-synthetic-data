@@ -1,10 +1,11 @@
-from flask import Flask, redirect, request, abort
-from multiprocessing import Manager, Lock
-import subprocess
 import os
 import time
+import json
 import socket
 import signal
+import subprocess
+from multiprocessing import Manager, Lock
+from flask import Flask, redirect, request, abort
 
 app = Flask(__name__)
 
@@ -60,6 +61,8 @@ def start_prototype(prototype_id: str, prototype_name: str, prototype_system: st
 def run_prototype():
     stop_prototype()
     data = request.json
+    if data is None:
+        return "Missing JSON data in request body", 400
     id = data.get('id')
     name = data.get('name')
     system = data.get('system')
@@ -101,10 +104,11 @@ def get_active_prototype():
 @app.route('/generate', methods=['POST'])
 def generate_prototype():
     GENERATOR_PATH = "/usr/src/prototypes/backend/generation/generator.sh"  # TODO: put in env
+    SYNTHETIC_DATA_GENERATOR_PATH = "/usr/src/prototypes/backend/generation/generation_scripts/generate_synthetic_data.py"
     COPY_DATABASE_PATH = "/usr/src/prototypes/backend/generation/copy_database.sh"
-    GET_GLOBALS_PATH = "/usr/src/prototypes/backend/generation/generation_scripts/get_globals.py"
-
     data = request.json
+    if data is None:
+        return "Missing JSON data in request body", 400
     id = data.get('id')
     name = data.get('name')
     system = data.get('system')
@@ -113,20 +117,12 @@ def generate_prototype():
         subprocess.run([GENERATOR_PATH, id, system, name, metadata], check=True)
     except subprocess.CalledProcessError:
         return f"Failed to generate prototype, id={id}", 500
-    subprocess.call(["python3", "/usr/src/prototypes/backend/schema_extract.py", name, system])   #added this for now to test the working of schema_extract.py
-    # print(metadata)
-    retrieveUseSyntheticData = subprocess.run(
-        ["python3", GET_GLOBALS_PATH, "get_synth", metadata],
-        stdout=subprocess.PIPE,
-        text=True
-    )
-    # Backend will use Synthetic data here
-    useSyntheticData = retrieveUseSyntheticData.stdout.strip() == "True"
-    if useSyntheticData:
-        print("Use synthetic data.")
-    else:
-        print("Do not use synthetic data.")
-
+    # TODO: find out what the flag is
+    if True:
+        try:
+            subprocess.call(["python3", SYNTHETIC_DATA_GENERATOR_PATH, name, system])
+        except subprocess.CalledProcessError:
+            return f"Failed to generate and populate synthetic data", 500
     # TODO: this database retrieval should be done using ids
     if 'database_prototype_name' in data:
         database_prototype_name = data.get('database_prototype_name')
@@ -141,6 +137,8 @@ def generate_prototype():
 def remove_prototype():
     REMOVER_PATH = "/usr/src/prototypes/backend/generation/remover.sh"  # TODO: put in env
     data = request.json
+    if data is None:
+        return "Missing JSON data in request body", 400
     id = data.get('id')
     name = data.get('name')
     system = data.get('system')
@@ -154,4 +152,4 @@ def remove_prototype():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=os.environ.get('PORT', 8010), debug=True)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8010)), debug=True)

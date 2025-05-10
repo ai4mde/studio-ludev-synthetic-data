@@ -5,44 +5,39 @@ import json
 import django
 from django.apps import apps
 from django.db.models import ForeignKey, OneToOneField
-import requests
+from groq import Groq
 from graphlib import TopologicalSorter
-##############################################
 
-# PLEASE PUT YOUR GROQ API KEY IN THE call_groq FUNCTION BELOW
 
-##############################################
-
-def call_groq(prompt: str, model: str = 'llama-3.3-70b-versatile') -> str:
-    api_key = ""    
-    url = "https://api.groq.com/openai/v1/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json",
-    }
-    payload = {
-        "model": model,
-        "messages": [
-            {"role": "user", "content": prompt}
-        ],
-        "temperature": 0.7,
-    }
-
+def call_groq(prompt: str, model: str = "llama-3.3-70b-versatile") -> str:
+    client = Groq(
+        api_key=os.environ.get("GROQ_API_KEY"),
+    )
     try:
-        response = requests.post(url, headers=headers, json=payload)
-        response.raise_for_status()
-        return response.json()["choices"][0]["message"]["content"]
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt,
+                }
+            ],
+            model=model,
+        )
+        response = chat_completion.choices[0].message.content
+        if response is not None:
+            return response
+        else:
+            raise Exception("LLM returned None")
     except Exception as e:
-        raise Exception("Failed to call Groq LLM: " + str(e))
+        raise Exception("Failed to call LLM, error " + str(e))
+
 
 def setup_django(PROTOTYPE_NAME, SYSTEM):
-    print("my name is:", PROTOTYPE_NAME)
-    print("part of system:", SYSTEM)
-
-    PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'generated_prototypes', SYSTEM, PROTOTYPE_NAME))
+    PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..', 'generated_prototypes', SYSTEM, PROTOTYPE_NAME))
     sys.path.append(PROJECT_ROOT)
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", f"{PROTOTYPE_NAME}.settings")
     django.setup()
+
 
 def extract_model_definitions(models, hidden_models):
     model_definitions = []
@@ -64,64 +59,39 @@ def extract_model_definitions(models, hidden_models):
     return model_definitions
 
 
-#Returns a list of models topologically sorted based on key constraints
-#The model that has no dependencies will appear first in the list
 def toposort_models(models, hidden_models):
     ts = TopologicalSorter()
-    
     for model in models:
         if model.__name__ in hidden_models:
             continue
-
         key_constraints = []
-        
         for field in model._meta.fields:
             if isinstance(field, ForeignKey) or isinstance(field, OneToOneField):
                 key_constraints.append(field.name)
-        
         ts.add(model.__name__, *key_constraints)
-    
-    return [*ts.static_order()] 
+    return [*ts.static_order()]
 
 
-def make_synthetic_data_prompt(model_definitions, N_RECORDS):
+def make_prompt(model_definitions, N_RECORDS):
     prompt = f"""
-
     You are going to generate synthetic sample data for a database based on Django model definitions.
-    1) Make sure values match the expected type for each field. 
+    1) Make sure values match the expected type for each field.
     2) Make sure that the data are plausible real world values.
     3) You are going to return one json object, within this json object each model name is associated with an array of instances.
     4) Return only one unified json object made from the model arrays please, NO OTHER TEXT THAN JSON.
-
     """
-
-    for model_def in model_definitions:
-        model_name = model_def["model_name"]
-        
-        print(f"\nGenerating data for model: {model_name}")
-
-        single_model_def = {
-            "model_name": model_def["model_name"],
-            "fields": model_def["fields"],
+    for model_definition in model_definitions:
+        single_model_definition = {
+            "model_name": model_definition["model_name"],
+            "fields": model_definition["fields"],
         }
-        formatted_model_def = json.dumps(single_model_def, indent=2)
-
-        prompt = prompt + f"  Generate {N_RECORDS} synthetic records based on this model definition. {formatted_model_def}   "
-        
+        formatted_single_model_definition = json.dumps(single_model_definition, indent=2)
+        prompt += f" \nGenerate {N_RECORDS} synthetic records based on this model definition. {formatted_single_model_definition}\n"
     return prompt
 
-def extract_json_from_response(llm_response):
-    json_start = llm_response.find('{')
-    json_end = llm_response.rfind('}') + 1
-    json_string = llm_response[json_start:json_end]
-    return json.loads(json_string)
 
 def save_records(model_class, synthetic_data, model_name, name_to_id_to_id_mapping_mapping):
-
-    #This is a dictionary that keeps track of which "id" that the LLM generated
-    #maps to which actual primarykey (autofield)
     llm_id_to_auto_id = {}
-
     for record in synthetic_data:
         instance = model_class()
         for field_name, field_value in record.items():
@@ -143,50 +113,38 @@ def save_records(model_class, synthetic_data, model_name, name_to_id_to_id_mappi
             llm_id_to_auto_id[f'{record["id"]}'] = instance.id
         except Exception as e:
             print(f"Failed to save record for {model_name}: {e}")
-    
     return llm_id_to_auto_id
 
-def main(PROTOTYPE_NAME, SYSTEM, N_RECORDS):
-    setup_django(PROTOTYPE_NAME, SYSTEM)
 
+def main():
+    PROTOTYPE_NAME = sys.argv[1]
+    SYSTEM = sys.argv[2]
+    N_RECORDS = 10
+    setup_django(PROTOTYPE_NAME, SYSTEM)
     hidden_models = ["LogEntry", "Permission", "Group", "User", "ContentType", "Session"]
     models = apps.get_models()
     model_definitions = extract_model_definitions(models, hidden_models)
-
-    insert_order = toposort_models(models,hidden_models)
-
-    SYN_DATA_PROMPT = make_synthetic_data_prompt(model_definitions, N_RECORDS)
-    # print(SYN_DATA_PROMPT)
-    
-    total_json = None
-
+    prompt = make_prompt(model_definitions, N_RECORDS)
+    generated_data = None
     try:
-        llm_response = call_groq(SYN_DATA_PROMPT)
-        print(llm_response)
-        try: 
-            total_json = extract_json_from_response(llm_response)
+        llm_response = call_groq(prompt)
+        try:
+            generated_data = json.loads(llm_response[llm_response.find('{'):llm_response.rfind('}')+1])
         except json.JSONDecodeError as e:
-                    print(f"Failed to parse JSON from LLM response: {e}")
-                    print(f"Raw response: {llm_response}")
+            print(f"Failed to parse JSON from LLM response: {e}")
+            print(f"Raw response: {llm_response}")
     except Exception as e:
-            print(f"Error generating synthetic data: {e}")
-
-    if total_json is None:
-        return 
-
+        print(f"Error generating synthetic data: {e}")
+    if generated_data is None:
+        return
     name_to_id_to_id_mapping_mapping = {}
-
-    for model_name in insert_order:
+    for model_name in toposort_models(models, hidden_models):
         model_class = next((m for m in models if m.__name__ == model_name), None)
         if not model_class:
             continue
-
-        id_to_id_mapping = save_records(model_class, total_json[model_name], model_name, name_to_id_to_id_mapping_mapping)
+        id_to_id_mapping = save_records(model_class, generated_data[model_name], model_name, name_to_id_to_id_mapping_mapping)
         name_to_id_to_id_mapping_mapping[model_name] = id_to_id_mapping
 
-if __name__ == "__main__":
-    PROTOTYPE_NAME = sys.argv[1]
-    SYSTEM = sys.argv[2]
-    N_RECORDS = 9
 
-    main(PROTOTYPE_NAME, SYSTEM, N_RECORDS)
+if __name__ == "__main__":
+    main()
