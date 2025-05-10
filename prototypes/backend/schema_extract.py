@@ -14,7 +14,7 @@ from graphlib import TopologicalSorter
 ##############################################
 
 def call_groq(prompt: str, model: str = 'llama-3.3-70b-versatile') -> str:
-    api_key = ""    
+    api_key = "place key here"    
     url = "https://api.groq.com/openai/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {api_key}",
@@ -84,7 +84,7 @@ def toposort_models(models, hidden_models):
     return [*ts.static_order()] 
 
 
-def make_synthetic_data_prompt(model_definitions, N_RECORDS):
+def make_synthetic_data_prompt(model_definitions, syntheticInstructions, syntheticCounts):
     prompt = f"""
 
     You are going to generate synthetic sample data for a database based on Django model definitions.
@@ -93,12 +93,15 @@ def make_synthetic_data_prompt(model_definitions, N_RECORDS):
     3) You are going to return one json object, within this json object each model name is associated with an array of instances.
     4) Return only one unified json object made from the model arrays please, NO OTHER TEXT THAN JSON.
 
+    {syntheticInstructions}
     """
 
     for model_def in model_definitions:
         model_name = model_def["model_name"]
+        num_records = syntheticCounts.get(model_name.lower(), 10)  # fallback to 10
+        #print("number records count", num_records)
         
-        print(f"\nGenerating data for model: {model_name}")
+        print(f"\nGenerating data for model: {model_name} ({num_records} records)")
 
         single_model_def = {
             "model_name": model_def["model_name"],
@@ -106,7 +109,7 @@ def make_synthetic_data_prompt(model_definitions, N_RECORDS):
         }
         formatted_model_def = json.dumps(single_model_def, indent=2)
 
-        prompt = prompt + f"  Generate {N_RECORDS} synthetic records based on this model definition. {formatted_model_def}   "
+        prompt = prompt + f"  Generate {num_records} synthetic records based on this model definition. {formatted_model_def}   "
         
     return prompt
 
@@ -146,7 +149,7 @@ def save_records(model_class, synthetic_data, model_name, name_to_id_to_id_mappi
     
     return llm_id_to_auto_id
 
-def main(PROTOTYPE_NAME, SYSTEM, N_RECORDS):
+def main(PROTOTYPE_NAME, SYSTEM, syntheticInstructions, syntheticCounts):
     setup_django(PROTOTYPE_NAME, SYSTEM)
 
     hidden_models = ["LogEntry", "Permission", "Group", "User", "ContentType", "Session"]
@@ -155,7 +158,7 @@ def main(PROTOTYPE_NAME, SYSTEM, N_RECORDS):
 
     insert_order = toposort_models(models,hidden_models)
 
-    SYN_DATA_PROMPT = make_synthetic_data_prompt(model_definitions, N_RECORDS)
+    SYN_DATA_PROMPT = make_synthetic_data_prompt(model_definitions, syntheticInstructions, syntheticCounts)
     # print(SYN_DATA_PROMPT)
     
     total_json = None
@@ -187,6 +190,13 @@ def main(PROTOTYPE_NAME, SYSTEM, N_RECORDS):
 if __name__ == "__main__":
     PROTOTYPE_NAME = sys.argv[1]
     SYSTEM = sys.argv[2]
-    N_RECORDS = 9
+    syntheticInstructions = sys.argv[3] if len(sys.argv) > 3 else ""
+    syntheticCounts = json.loads(sys.argv[4]) if len(sys.argv) > 4 else {}
 
-    main(PROTOTYPE_NAME, SYSTEM, N_RECORDS)
+    #print("syn instruc: " , syntheticInstructions)
+    #print("syn count: " , syntheticCounts)
+
+    main(PROTOTYPE_NAME, SYSTEM, syntheticInstructions, syntheticCounts)
+
+
+
