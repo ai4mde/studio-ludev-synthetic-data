@@ -61,6 +61,8 @@ def start_prototype(prototype_id: str, prototype_name: str, prototype_system: st
 def run_prototype():
     stop_prototype()
     data = request.json
+    if data is None:
+        abort(400)
     id = data.get('id')
     name = data.get('name')
     system = data.get('system')
@@ -105,6 +107,8 @@ def generate_prototype():
     SYNTHETIC_DATA_GENERATOR_PATH = "/usr/src/prototypes/backend/generation/generation_scripts/generate_synthetic_data.py"
     COPY_DATABASE_PATH = "/usr/src/prototypes/backend/generation/copy_database.sh"
     data = request.json
+    if data is None:
+        abort(400)
     id = data.get('id')
     name = data.get('name')
     system = data.get('system')
@@ -133,6 +137,8 @@ def generate_prototype():
 def remove_prototype():
     REMOVER_PATH = "/usr/src/prototypes/backend/generation/remover.sh"  # TODO: put in env
     data = request.json
+    if data is None:
+        abort(400)
     id = data.get('id')
     name = data.get('name')
     system = data.get('system')
@@ -146,4 +152,4 @@ def remove_prototype():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=os.environ.get('PORT', 8010), debug=True)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8010)), debug=True)
