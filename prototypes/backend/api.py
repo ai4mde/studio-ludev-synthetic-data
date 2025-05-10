@@ -1,10 +1,11 @@
-from flask import Flask, redirect, request, abort
-from multiprocessing import Manager, Lock
-import subprocess
 import os
 import time
+import json
 import socket
 import signal
+import subprocess
+from multiprocessing import Manager, Lock
+from flask import Flask, redirect, request, abort
 
 app = Flask(__name__)
 
@@ -101,7 +102,7 @@ def get_active_prototype():
 @app.route('/generate', methods=['POST'])
 def generate_prototype():
     GENERATOR_PATH = "/usr/src/prototypes/backend/generation/generator.sh"  # TODO: put in env
-    SYNTHETIC_DATA_GENERATOR_PATH = "/usr/src/prototypes/backend/generation/synthetic_data_generator.sh"
+    SYNTHETIC_DATA_GENERATOR_PATH = "/usr/src/prototypes/backend/generation/generation_scripts/generate_synthetic_data.py"
     COPY_DATABASE_PATH = "/usr/src/prototypes/backend/generation/copy_database.sh"
     data = request.json
     id = data.get('id')
@@ -115,7 +116,7 @@ def generate_prototype():
     # TODO: find out what the flag is
     if True:
         try:
-            subprocess.run([SYNTHETIC_DATA_GENERATOR_PATH, name, system], check=True)
+            subprocess.call(["python3", SYNTHETIC_DATA_GENERATOR_PATH, name, system])
         except subprocess.CalledProcessError:
             return f"Failed to generate and populate synthetic data", 500
     # TODO: this database retrieval should be done using ids

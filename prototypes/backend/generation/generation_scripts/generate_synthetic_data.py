@@ -5,12 +5,35 @@ import json
 import django
 from django.apps import apps
 from django.db.models import ForeignKey, OneToOneField
+from groq import Groq
 from graphlib import TopologicalSorter
-from model.llm.handler import llm_handler
+
+
+def call_groq(prompt: str, model: str = "llama-3.3-70b-versatile") -> str:
+    client = Groq(
+        api_key=os.environ.get("GROQ_API_KEY"),
+    )
+    try:
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt,
+                }
+            ],
+            model=model,
+        )
+        response = chat_completion.choices[0].message.content
+        if response is not None:
+            return response
+        else:
+            raise Exception("LLM returned None")
+    except Exception as e:
+        raise Exception("Failed to call LLM, error " + str(e))
 
 
 def setup_django(PROTOTYPE_NAME, SYSTEM):
-    PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'generated_prototypes', SYSTEM, PROTOTYPE_NAME))
+    PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..', 'generated_prototypes', SYSTEM, PROTOTYPE_NAME))
     sys.path.append(PROJECT_ROOT)
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", f"{PROTOTYPE_NAME}.settings")
     django.setup()
@@ -49,16 +72,22 @@ def toposort_models(models, hidden_models):
     return [*ts.static_order()]
 
 
-def format_model_definitions(model_definitions, N_RECORDS):
-    all_formatted_model_definitions = ""
+def make_prompt(model_definitions, N_RECORDS):
+    prompt = f"""
+    You are going to generate synthetic sample data for a database based on Django model definitions.
+    1) Make sure values match the expected type for each field.
+    2) Make sure that the data are plausible real world values.
+    3) You are going to return one json object, within this json object each model name is associated with an array of instances.
+    4) Return only one unified json object made from the model arrays please, NO OTHER TEXT THAN JSON.
+    """
     for model_definition in model_definitions:
         single_model_definition = {
             "model_name": model_definition["model_name"],
             "fields": model_definition["fields"],
         }
         formatted_single_model_definition = json.dumps(single_model_definition, indent=2)
-        all_formatted_model_definitions += f"  Generate {N_RECORDS} synthetic records based on this model definition. {formatted_single_model_definition}  "
-    return all_formatted_model_definitions
+        prompt += f" \nGenerate {N_RECORDS} synthetic records based on this model definition. {formatted_single_model_definition}\n"
+    return prompt
 
 
 def save_records(model_class, synthetic_data, model_name, name_to_id_to_id_mapping_mapping):
@@ -88,26 +117,19 @@ def save_records(model_class, synthetic_data, model_name, name_to_id_to_id_mappi
 
 
 def main():
-    PROJECT_NAME = sys.argv[1]
+    PROTOTYPE_NAME = sys.argv[1]
     SYSTEM = sys.argv[2]
-    N_RECORDS = 9
-    setup_django(PROJECT_NAME, SYSTEM)
+    N_RECORDS = 10
+    setup_django(PROTOTYPE_NAME, SYSTEM)
     hidden_models = ["LogEntry", "Permission", "Group", "User", "ContentType", "Session"]
     models = apps.get_models()
     model_definitions = extract_model_definitions(models, hidden_models)
-    all_formatted_model_definitions = format_model_definitions(model_definitions, N_RECORDS)
+    prompt = make_prompt(model_definitions, N_RECORDS)
     generated_data = None
     try:
-        llm_response = llm_handler(
-            "SYNTHETIC_DATA_GENERATE_METHOD",
-            input_data={"all_formatted_model_definitions": all_formatted_model_definitions}
-        )
+        llm_response = call_groq(prompt)
         try:
-            json_match = re.search(r'```json\n([\s\S]*?)\n```', llm_response)
-            if json_match:
-                generated_data = json.loads(json_match.group(1))
-            else:
-                generated_data = json.loads(llm_response)
+            generated_data = json.loads(llm_response[llm_response.find('{'):llm_response.rfind('}')+1])
         except json.JSONDecodeError as e:
             print(f"Failed to parse JSON from LLM response: {e}")
             print(f"Raw response: {llm_response}")
