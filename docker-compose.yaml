@@ -34,7 +34,7 @@ services:
       context: api
     env_file:
       - config/api.env
-      - config/keys.env
+      - config/api_keys.env
     networks:
       - ai4mde_traefik
     volumes:
@@ -51,7 +51,7 @@ services:
       context: prototypes
     env_file:
       - config/prototypes.env
-      - config/keys.env
+      - config/prototypes_keys.env
     networks:
       - ai4mde_traefik
     volumes:
