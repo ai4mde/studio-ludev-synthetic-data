@@ -1,0 +1,128 @@
+import os
+import sys
+import re
+import json
+import django
+from django.apps import apps
+from django.db.models import ForeignKey, OneToOneField
+from graphlib import TopologicalSorter
+from model.llm.handler import llm_handler
+
+
+def setup_django(PROTOTYPE_NAME, SYSTEM):
+    PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'generated_prototypes', SYSTEM, PROTOTYPE_NAME))
+    sys.path.append(PROJECT_ROOT)
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", f"{PROTOTYPE_NAME}.settings")
+    django.setup()
+
+
+def extract_model_definitions(models, hidden_models):
+    model_definitions = []
+    for model in models:
+        if model.__name__ not in hidden_models:
+            fields_info = []
+            for field in model._meta.fields:
+                field_info = {
+                    "name": field.name,
+                    "type": field.__class__.__name__,
+                    "choices": field.choices if hasattr(field, 'choices') and field.choices else None
+                }
+                fields_info.append(field_info)
+            model_def = {
+                "model_name": model.__name__,
+                "fields": fields_info
+            }
+            model_definitions.append(model_def)
+    return model_definitions
+
+
+def toposort_models(models, hidden_models):
+    ts = TopologicalSorter()
+    for model in models:
+        if model.__name__ in hidden_models:
+            continue
+        key_constraints = []
+        for field in model._meta.fields:
+            if isinstance(field, ForeignKey) or isinstance(field, OneToOneField):
+                key_constraints.append(field.name)
+        ts.add(model.__name__, *key_constraints)
+    return [*ts.static_order()]
+
+
+def format_model_definitions(model_definitions, N_RECORDS):
+    all_formatted_model_definitions = ""
+    for model_definition in model_definitions:
+        single_model_definition = {
+            "model_name": model_definition["model_name"],
+            "fields": model_definition["fields"],
+        }
+        formatted_single_model_definition = json.dumps(single_model_definition, indent=2)
+        all_formatted_model_definitions += f"  Generate {N_RECORDS} synthetic records based on this model definition. {formatted_single_model_definition}  "
+    return all_formatted_model_definitions
+
+
+def save_records(model_class, synthetic_data, model_name, name_to_id_to_id_mapping_mapping):
+    llm_id_to_auto_id = {}
+    for record in synthetic_data:
+        instance = model_class()
+        for field_name, field_value in record.items():
+            if field_name == "id" or field_name is None:
+                continue
+            try:
+                field = model_class._meta.get_field(field_name)
+                if isinstance(field, (ForeignKey, OneToOneField)):
+                    related_model = field.remote_field.model
+                    related_instance = related_model.objects.get(id=name_to_id_to_id_mapping_mapping[field_name][str(field_value)])
+                    setattr(instance, field_name, related_instance)
+                else:
+                    setattr(instance, field_name, field_value)
+            except Exception as e:
+                print(f"Failed to set field {field_name} with value {field_value}: {e}")
+        try:
+            instance.save()
+            print(f"Saved record for {model_name}")
+            llm_id_to_auto_id[f'{record["id"]}'] = instance.id
+        except Exception as e:
+            print(f"Failed to save record for {model_name}: {e}")
+    return llm_id_to_auto_id
+
+
+def main():
+    PROJECT_NAME = sys.argv[1]
+    SYSTEM = sys.argv[2]
+    N_RECORDS = 9
+    setup_django(PROJECT_NAME, SYSTEM)
+    hidden_models = ["LogEntry", "Permission", "Group", "User", "ContentType", "Session"]
+    models = apps.get_models()
+    model_definitions = extract_model_definitions(models, hidden_models)
+    all_formatted_model_definitions = format_model_definitions(model_definitions, N_RECORDS)
+    generated_data = None
+    try:
+        llm_response = llm_handler(
+            "SYNTHETIC_DATA_GENERATE_METHOD",
+            input_data={"all_formatted_model_definitions": all_formatted_model_definitions}
+        )
+        try:
+            json_match = re.search(r'```json\n([\s\S]*?)\n```', llm_response)
+            if json_match:
+                generated_data = json.loads(json_match.group(1))
+            else:
+                generated_data = json.loads(llm_response)
+        except json.JSONDecodeError as e:
+            print(f"Failed to parse JSON from LLM response: {e}")
+            print(f"Raw response: {llm_response}")
+    except Exception as e:
+        print(f"Error generating synthetic data: {e}")
+    if generated_data is None:
+        return
+    name_to_id_to_id_mapping_mapping = {}
+    for model_name in toposort_models(models, hidden_models):
+        model_class = next((m for m in models if m.__name__ == model_name), None)
+        if not model_class:
+            continue
+        id_to_id_mapping = save_records(model_class, generated_data[model_name], model_name, name_to_id_to_id_mapping_mapping)
+        name_to_id_to_id_mapping_mapping[model_name] = id_to_id_mapping
+
+
+if __name__ == "__main__":
+    main()

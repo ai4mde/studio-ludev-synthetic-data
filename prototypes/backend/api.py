@@ -101,9 +101,8 @@ def get_active_prototype():
 @app.route('/generate', methods=['POST'])
 def generate_prototype():
     GENERATOR_PATH = "/usr/src/prototypes/backend/generation/generator.sh"  # TODO: put in env
+    SYNTHETIC_DATA_GENERATOR_PATH = "/usr/src/prototypes/backend/generation/synthetic_data_generator.sh"
     COPY_DATABASE_PATH = "/usr/src/prototypes/backend/generation/copy_database.sh"
-    GET_GLOBALS_PATH = "/usr/src/prototypes/backend/generation/generation_scripts/get_globals.py"
-
     data = request.json
     id = data.get('id')
     name = data.get('name')
@@ -113,20 +112,12 @@ def generate_prototype():
         subprocess.run([GENERATOR_PATH, id, system, name, metadata], check=True)
     except subprocess.CalledProcessError:
         return f"Failed to generate prototype, id={id}", 500
-    subprocess.call(["python3", "/usr/src/prototypes/backend/schema_extract.py", name, system])   #added this for now to test the working of schema_extract.py
-    # print(metadata)
-    retrieveUseSyntheticData = subprocess.run(
-        ["python3", GET_GLOBALS_PATH, "get_synth", metadata],
-        stdout=subprocess.PIPE,
-        text=True
-    )
-    # Backend will use Synthetic data here
-    useSyntheticData = retrieveUseSyntheticData.stdout.strip() == "True"
-    if useSyntheticData:
-        print("Use synthetic data.")
-    else:
-        print("Do not use synthetic data.")
-
+    # TODO: find out what the flag is
+    if True:
+        try:
+            subprocess.run([SYNTHETIC_DATA_GENERATOR_PATH, name, system], check=True)
+        except subprocess.CalledProcessError:
+            return f"Failed to generate and populate synthetic data", 500
     # TODO: this database retrieval should be done using ids
     if 'database_prototype_name' in data:
         database_prototype_name = data.get('database_prototype_name')
