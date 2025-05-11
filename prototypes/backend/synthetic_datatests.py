@@ -2,6 +2,7 @@ import unittest
 import requests
 import schema_extract  
 import time
+import subprocess
 from uuid import uuid4
 
 PROTOTYPE_API = "http://localhost:8010" 
@@ -158,23 +159,23 @@ PROTOTYPE_METADATA = {
 
 
 class SyntheticDataTests(unittest.TestCase):
-    def setUp(self):
-        response = requests.post(f"{PROTOTYPE_API}/generate", json={
-            "id": PROTOTYPE_ID,
-            "name": PROTOTYPE_NAME,
-            "system": PROTOTYPE_SYSTEM,
-            "metadata": "{}"
-        })
-        assert response.status_code == 200, f"Setup failed: {response.text}"
-        time.sleep(2)
+    # def setUp(self):
+    #     response = requests.post(f"{PROTOTYPE_API}/generate", json={
+    #         "id": PROTOTYPE_ID,
+    #         "name": PROTOTYPE_NAME,
+    #         "system": PROTOTYPE_SYSTEM,
+    #         "metadata": "{}"
+    #     })
+    #     assert response.status_code == 200, f"Setup failed: {response.text}"
+    #     time.sleep(2)
 
-    def tearDown(self):
-        response = requests.delete(f"{PROTOTYPE_API}/remove", json={
-            "id": PROTOTYPE_ID,
-            "name": PROTOTYPE_NAME,
-            "system": PROTOTYPE_SYSTEM
-        })
-        assert response.status_code == 200, f"Teardown failed: {response.text}"
+    # def tearDown(self):
+    #     response = requests.delete(f"{PROTOTYPE_API}/remove", json={
+    #         "id": PROTOTYPE_ID,
+    #         "name": PROTOTYPE_NAME,
+    #         "system": PROTOTYPE_SYSTEM
+    #     })
+    #     assert response.status_code == 200, f"Teardown failed: {response.text}"
 
     def test_make_prompt_correct_model(self):
         response = schema_extract.make_synthetic_data_prompt([{'model_name': 'Manufacturer', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, {'name': 'name1', 'type': 'CharField', 'choices': None}, {'name': 'age1', 'type': 'IntegerField', 'choices': None}]}], 3)
@@ -207,6 +208,21 @@ class SyntheticDataTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             schema_extract.make_synthetic_data_prompt([], 3)
 
+    def test_extract_model_definitions(self):
+        response = requests.post(f"{PROTOTYPE_API}/generate", json={
+            "id": PROTOTYPE_ID,
+            "name": PROTOTYPE_NAME,
+            "system": PROTOTYPE_SYSTEM,
+            "metadata": str(PROTOTYPE_METADATA)
+        })
+        assert response.status_code == 200, f"Setup failed: {response.text}"
+        time.sleep(2)
 
+        testsubprocess1 = subprocess.run(
+        ["python3", "/usr/src/prototypes/backend/test_extract_model_case_1.py", PROTOTYPE_NAME, PROTOTYPE_SYSTEM],
+        stdout=subprocess.PIPE,
+        text=True
+        )
+        print(testsubprocess1)
 if __name__ == '__main__':
     unittest.main()
