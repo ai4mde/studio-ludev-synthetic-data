@@ -20,7 +20,7 @@ import { useAtom } from "jotai";
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router";
 import Select from "react-select";
- 
+
 type PrototypeInput = {
     name: string;
     description?: string;
@@ -29,7 +29,7 @@ type PrototypeInput = {
     metadata: Record<string, any>;
     database_hash?: string;
 };
- 
+
 type PrototypeOutput = {
     id: string;
     name: string;
@@ -37,7 +37,7 @@ type PrototypeOutput = {
     system: string;
     running: boolean;
 };
- 
+
 export const CreatePrototype: React.FC = () => {
     const [open, setOpen] = useAtom(createPrototypeAtom);
     const close = () => setOpen(false);
@@ -50,20 +50,21 @@ export const CreatePrototype: React.FC = () => {
     const [useAuthentication, setUseAuthentication] = useState(true);
     const [useSyntheticData, setUseSyntheticData] = useState(false); // New state for Synthetic Data
     const [syntheticCounts, setSyntheticCounts] = useState<Record<string, number>>({}); // state to store synthetic data counts
+    const [globalSyntheticCount, setGlobalSyntheticCount] = useState<number | string>('');
     const [showSyntheticModal, setShowSyntheticModal] = useState(false); // modal state
     const [syntheticInstructions, setSyntheticInstructions] = useState<string>(''); // state to store custom instructions for synthetic data generation
     const [databaseHash, setDatabaseHash] = useState<string | null>(null);
     const [databasePrototypes, setDatabasePrototypes] = useState([]);
     const [selectedDatabasePrototype, setSelectedDatabasePrototype] = useState(null);
     const [syntheticInstructionsPerNode, setSyntheticInstructionsPerNode] = useState<Record<string, string>>({});
- 
- 
+
+
     useEffect(() => {
         if (isSuccessInterfaces && interfaces) {
             setSelectedInterfaces(interfaces.map((e) => ({ label: e.name, value: e })));
         }
     }, [interfaces, isSuccessInterfaces]);
- 
+
     useEffect(() => {
         const computeHash = async () => {
             if (systemId && isSuccessInterfaces) {
@@ -71,17 +72,17 @@ export const CreatePrototype: React.FC = () => {
                     authAxios.get(`v1/metadata/systems/${systemId}/classes/`),
                     authAxios.get(`v1/metadata/systems/${systemId}/classifier-relations/`),
                 ]);
- 
+
                 const interfaceNames = interfaces.map((e) => ({ name: e.name }));
                 const inputString = `${systemId}${JSON.stringify(classifiers.data)}${JSON.stringify(relations.data)}${JSON.stringify(interfaceNames)}`;
                 const hash = CryptoJS.SHA256(inputString).toString(CryptoJS.enc.Hex);
                 setDatabaseHash(hash);
             }
         };
- 
+
         computeHash();
     }, [systemId, interfaces, isSuccessInterfaces]);
- 
+
     useEffect(() => {
         const fetchDatabasePrototypes = async () => {
             if (databaseHash) {
@@ -93,10 +94,10 @@ export const CreatePrototype: React.FC = () => {
                 }
             }
         };
- 
+
         fetchDatabasePrototypes();
     }, [databaseHash]);
- 
+
     const { mutateAsync, isPending } = useMutation<
         PrototypeOutput,
         unknown,
@@ -124,18 +125,18 @@ export const CreatePrototype: React.FC = () => {
                 });
                 return data
             }
- 
+
         },
         onError: (error) => {
             setGenerationError("An error occurred while creating the prototype!");
         },
     });
- 
+
     const queryClient = useQueryClient();
     const onSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
         e.preventDefault();
         setError(null);
- 
+
         const formData = new FormData(e.currentTarget);
         const name = `${formData.get("name")}`.trim();
         const description = `${formData.get("description")}`;
@@ -149,18 +150,18 @@ export const CreatePrototype: React.FC = () => {
             "syntheticInstructions": syntheticInstructions,
             "syntheticInstructionsPerNode": syntheticInstructionsPerNode, // <-- new
         };
- 
+
         const alphanumericRegex = /^[a-zA-Z0-9]+$/;
         if (!alphanumericRegex.test(name)) {
             setError("Name may only contain alphanumeric characters!");
             return;
         }
- 
+
         if (!databaseHash) {
             setError("No database hash.");
             return;
         }
- 
+
         mutateAsync({
             name,
             description,
@@ -175,7 +176,7 @@ export const CreatePrototype: React.FC = () => {
             console.log(err)
         });
     };
- 
+
     if (isPending) {
         return (
             <Modal open>
@@ -188,19 +189,19 @@ export const CreatePrototype: React.FC = () => {
             </Modal>
         );
     }
- 
+
     const hasName = (obj: any): obj is { name: string } => {
         return obj && typeof obj.name === 'string';
     };
- 
+
     const extractNodeNames = (node: any) => {
         // Loop through all properties of the node (cls, enum, etc.)
         const subObjectWithName = Object.values(node).find((sub) => hasName(sub));
- 
+
         return subObjectWithName ? subObjectWithName.name : null;
     };
- 
- 
+
+
     // Update synthetic data counts
     const updateValue = (name: string, value: number) => {
         setSyntheticCounts((prev) => ({
@@ -208,37 +209,37 @@ export const CreatePrototype: React.FC = () => {
             [name]: value, // Update the value for the specified name
         }));
     };
- 
+
     const validClassNames = interfaces[0]?.data?.sections?.map((section) => section.class) || [];
- 
+
     const getMultiplicityRules = (): {
         sourceName: string;
         targetName: string;
         rule: 'le' | 'ge' | 'eq';
     }[] => {
         if (!diagrams?.[0]?.edges || !diagrams?.[0]?.nodes) return [];
- 
+
         const nodesById = Object.fromEntries(
             diagrams[0].nodes.map(node => [node.id, extractNodeNames(node)])
         );
- 
+
         return diagrams[0].edges
             .filter(edge => edge.rel?.multiplicity)
             .map(edge => {
                 const { multiplicity } = edge.rel;
                 const sourceName = nodesById[edge.source_ptr];
                 const targetName = nodesById[edge.target_ptr];
- 
+
                 if (!sourceName || !targetName) return null;
- 
+
                 const srcMult = multiplicity.source;
                 const tgtMult = multiplicity.target;
- 
+
                 let rule: 'le' | 'ge' | 'eq' | null = null;
                 if (srcMult === "1" && tgtMult === "1") rule = 'eq';
                 else if (srcMult === "1" && tgtMult === "*") rule = 'le';
                 else if (srcMult === "*" && tgtMult === "1") rule = 'ge';
- 
+
                 return rule ? { sourceName, targetName, rule } : null;
             })
             .filter(Boolean) as {
@@ -247,54 +248,54 @@ export const CreatePrototype: React.FC = () => {
                 rule: 'le' | 'ge' | 'eq';
             }[];
     };
- 
+
     const handleSyntheticValidation = () => {
         const rules = getMultiplicityRules();
         let isValid = true;
         let errorMessage = '';
- 
+
         const hasValidNodes = diagrams[0]?.nodes?.some(node =>
             validClassNames.includes(node.cls_ptr)
         );
- 
+
         if (!hasValidNodes) {
             setUseSyntheticData(false);
             setShowSyntheticModal(false);
             return;
         }
- 
+
         rules.forEach(({ sourceName, targetName, rule }) => {
             const sourceCount = syntheticCounts[sourceName] ?? 0;
             const targetCount = syntheticCounts[targetName] ?? 0;
- 
+
             if (rule === 'le') { // One to manny relation
                 if (targetCount !== 0 && sourceCount === 0) {
                     errorMessage = `${sourceName} should have at least 1, due to one-to-many associoation with target ${targetName}`;
                     isValid = false;
                 }
- 
+
                 else if (sourceCount > targetCount && targetCount !== 0) {
                     errorMessage = `${sourceName} must be less than or equal to ${targetName}`;
                     isValid = false;
                 }
- 
+
             } else if (rule === 'ge') { // many to one relation
                 if (targetCount === 0 && sourceCount !== 0) {
                     errorMessage = `${targetName} should have at least 1, due to many-to-one associoation with source ${sourceName}`;
                     isValid = false;
                 }
- 
+
                 else if (sourceCount < targetCount) {
                     errorMessage = `${sourceName} must be greater than or equal to ${targetName}`;
                     isValid = false;
                 }
- 
+
             } else if (rule === 'eq' && sourceCount !== targetCount) { // One to one relation
                 isValid = false;
                 errorMessage = `${sourceName} must have the same count as ${targetName}`;
             }
         });
- 
+
         if (isValid) {
             setGenerationError(null);
             setShowSyntheticModal(false);
@@ -302,8 +303,8 @@ export const CreatePrototype: React.FC = () => {
             setGenerationError(errorMessage);
         }
     };
- 
- 
+
+
     return (
         <>
             <Modal open={open} onClose={() => { close(); setGenerationError(null) }}>
@@ -398,7 +399,7 @@ export const CreatePrototype: React.FC = () => {
                     )}
                 </ModalDialog>
             </Modal>
- 
+
             {/* Synthetic Data Popup Modal */}
             <Modal open={showSyntheticModal} onClose={() => setShowSyntheticModal(false)}>
                 <ModalDialog>
@@ -416,16 +417,41 @@ export const CreatePrototype: React.FC = () => {
                         </Typography>
                     ) : (
                         <>
-                            {/*Custom instructions for synthetic data generation*/}
+                            {/*Global Custom instructions for synthetic data generation*/}
                             <FormControl className="mt-4">
-                                <FormLabel>Custom Instructions</FormLabel>
+                                <FormLabel>Global Custom Instructions</FormLabel>
                                 <Input
                                     placeholder="e.g., 10 samples per user with real names"
                                     value={syntheticInstructions}
                                     onChange={(e) => setSyntheticInstructions(e.target.value)}
                                 />
                             </FormControl>
- 
+
+                            {/* Set count for all tables for synthetic data generation */}
+                            <FormControl className="mt-4">
+                                <FormLabel>Set amount for all tables</FormLabel>
+                                <input
+                                    placeholder="Enter amount"
+                                    type="number"
+                                    min="0"
+                                    value={globalSyntheticCount}
+                                    onChange={(e) => {
+                                        const value = parseInt(e.target.value, 10);
+                                        setGlobalSyntheticCount(e.target.value);
+
+                                        if (!isNaN(value) && value >= 0) {
+                                            diagrams[0]?.nodes
+                                                ?.filter((node) => validClassNames.includes(node.cls_ptr))
+                                                .forEach((node) => {
+                                                    const name = extractNodeNames(node);
+                                                    updateValue(name, value);
+                                                });
+                                        }
+                                    }}
+                                />
+                            </FormControl>
+
+
                             <div className="max-h-[400px] overflow-y-auto pr-2 mt-2">
                                 <div className="mb-6 border p-4 rounded shadow">
                                     {
@@ -466,7 +492,7 @@ export const CreatePrototype: React.FC = () => {
                                                             </>
                                                         )}
                                                     </div>
- 
+
                                                 );
                                             })
                                     }
@@ -475,13 +501,13 @@ export const CreatePrototype: React.FC = () => {
                         </>
                     )}
                     <Button onClick={handleSyntheticValidation}>Done</Button>
- 
+
                 </ModalDialog>
             </Modal>
- 
- 
+
+
         </>
     );
 };
- 
+
 export default CreatePrototype;
