@@ -57,7 +57,6 @@ export const CreatePrototype: React.FC = () => {
     const [databasePrototypes, setDatabasePrototypes] = useState([]);
     const [selectedDatabasePrototype, setSelectedDatabasePrototype] = useState(null);
     const [syntheticInstructionsPerNode, setSyntheticInstructionsPerNode] = useState<Record<string, string>>({});
-    const [countError, setCountError] = useState('');
 
 
     useEffect(() => {
@@ -440,34 +439,14 @@ export const CreatePrototype: React.FC = () => {
                                         setGlobalSyntheticCount(val);
 
                                         const parsed = parseInt(val, 10);
-                                        if (isNaN(parsed)) {
-                                            setCountError('Please enter a valid number');
-                                        } else if (parsed < 0) {
-                                            setCountError('Number must be zero or greater');
-                                        } else {
-                                            setCountError('');
-                                            diagrams[0]?.nodes
-                                                ?.filter((node) => validClassNames.includes(node.cls_ptr))
-                                                .forEach((node) => {
-                                                    const name = extractNodeNames(node);
-                                                    updateValue(name, parsed);
-                                                });
-                                        }
-                                    }}
-                                    error={!!countError}
-                                    slotProps={{
-                                        input: {
-                                            'aria-errormessage': 'global-count-error',
-                                        },
+                                        diagrams[0]?.nodes
+                                            ?.filter((node) => validClassNames.includes(node.cls_ptr))
+                                            .forEach((node) => {
+                                                const name = extractNodeNames(node);
+                                                updateValue(name, parsed);
+                                            });
                                     }}
                                 />
-
-                                {countError && (
-                                    <p id="global-count-error" className="text-red-500 text-sm mt-1">
-                                        {countError}
-                                    </p>
-                                )}
-
                             </FormControl>
 
 
