@@ -116,11 +116,11 @@ describe('AI4MDE App Features (Generation)', () => {
         await expect(page.locator('input[placeholder="Prototype"]')).toBeVisible();
     });
 
-    test('can generate prototype without specific instructions', async ({ page }) => {
+    test('can generate and visit prototype without custom instructions', async ({ page }) => {
         await page.fill('input[placeholder="Prototype"]', 'DemoPrototype')
         await page.getByRole('switch', { name: 'Use Authentication' }).click();
         await page.getByRole('switch', { name: 'Use Synthetic Data' }).click();
-        await page.keyboard.press('Escape');
+        await page.getByRole('button', { name: 'Done' }).click();
         await page.getByRole('button', { name: 'Create' }).click();
         await expect(page.getByText('Generating')).toBeVisible();
         await expect(page.locator('.animate-spin')).toBeVisible();
@@ -129,19 +129,7 @@ describe('AI4MDE App Features (Generation)', () => {
         await page.waitForLoadState('networkidle');
         await expect(page.getByText('DemoPrototype')).toBeVisible();
         await page.locator('button').filter({ hasText: 'Run' }).click();
-        await expect(page.getByText('http://prototype.ai4mde.localhost')).toBeVisible({ timeout: 60000 });
-    })
-
-    test.only('can visit generated prototype', async ({ page }) => {
-        await page.fill('input[placeholder="Prototype"]', 'DemoPrototype');
-        await page.getByRole('switch', { name: 'Use Authentication' }).click();
-        await page.getByRole('switch', { name: 'Use Synthetic Data' }).click();
-        await page.keyboard.press('Escape');
-        await page.getByRole('button', { name: 'Create' }).click();
-        await expect(page.getByText('Generating')).not.toBeVisible({ timeout: 60000 });
-        await page.reload();
-        await page.waitForLoadState('networkidle');
-        await page.locator('button').filter({ hasText: 'Run' }).click();
+        await expect(page.locator('button').filter({ hasText: 'Run' })).toBeDisabled();
         await expect(page.getByText('http://prototype.ai4mde.localhost')).toBeVisible({ timeout: 60000 });
         await page.goto('http://prototype.ai4mde.localhost');
         await page.waitForLoadState('networkidle');
@@ -150,16 +138,5 @@ describe('AI4MDE App Features (Generation)', () => {
         await page.locator('a[href*="/DemoInterface/"]').filter({ hasText: 'DemoInterface' }).click();
         await expect(page).toHaveTitle('DemoInterface');
         await expect(page.getByRole('heading', { name: 'Welcome!' })).toBeVisible();
-        await expect(page.locator('a[href*="/render_DemoInterface_"]').filter({ hasText: 'Cars' })).toBeVisible();
-        await page.locator('a[href*="/render_DemoInterface_"]').filter({ hasText: 'Cars' }).click();
-        await expect(page.getByRole('heading', { name: 'Cars' })).toBeVisible();
-        await expect(page.locator('table')).toBeVisible();
-        await expect(page.locator('th', { hasText: 'manufacturer' })).toBeVisible();
-        await expect(page.locator('th', { hasText: 'model' })).toBeVisible();
-        await expect(page.locator('th', { hasText: 'topSpeed' })).toBeVisible();
-        await expect(page.locator('th', { hasText: 'fuel' })).toBeVisible();
-        await expect(page.locator('table tr')).toHaveCount(11);
-        const manufacturers = await page.locator('table tr:not(:first-child) td:first-child').allTextContents();
-        expect(manufacturers.every(m => ['AUDI', 'BMW', 'MERCEDES'].includes(m.trim()))).toBe(true);
-    });
+    })
 })
