@@ -109,12 +109,13 @@ def generate_prototype():
     name = data.get('name')
     system = data.get('system')
     metadata = data.get('metadata')
+
+    print("In the generate endpoint:", id, name, system)
     try:
         subprocess.run([GENERATOR_PATH, id, system, name, metadata], check=True)
     except subprocess.CalledProcessError:
         return f"Failed to generate prototype, id={id}", 500
-    subprocess.call(["python3", "/usr/src/prototypes/backend/schema_extract.py", name, system])   #added this for now to test the working of schema_extract.py
-    # print(metadata)
+    
     retrieveUseSyntheticData = subprocess.run(
         ["python3", GET_GLOBALS_PATH, "get_synth", metadata],
         stdout=subprocess.PIPE,
@@ -123,6 +124,7 @@ def generate_prototype():
     # Backend will use Synthetic data here
     useSyntheticData = retrieveUseSyntheticData.stdout.strip() == "True"
     if useSyntheticData:
+        subprocess.call(["python3", "/usr/src/prototypes/backend/schema_extract.py", name, system])   #added this for now to test the working of schema_extract.py
         print("Use synthetic data.")
     else:
         print("Do not use synthetic data.")
