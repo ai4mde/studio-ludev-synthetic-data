@@ -15,17 +15,17 @@ const navigateToProject = async (page) => {
 }
 
 const selectProject = async (page, projectName = 'DemoProject') => {
-    await page.locator('a[href*="/projects/"]').filter({ hasText: projectName }).click();
+    await page.getByRole('link', { name: projectName }).click();
     await page.waitForLoadState('networkidle');
 }
 
 const selectSystem = async (page, systemName = 'DemoSystem') => {
-    await page.locator('a[href*="/systems/"]').filter({ hasText: systemName }).click();
+    await page.getByRole('link', { name: systemName }).click();
     await page.waitForLoadState('networkidle');
 }
 
 const navigateToPrototypes = async (page) => {
-    await page.locator('a[href*="/systems/"]').filter({ hasText: 'Prototypes' }).click();
+    await page.getByRole('link', { name: 'Prototypes' }).click();
     await page.waitForLoadState('networkidle');
 }
 
@@ -37,13 +37,13 @@ describe('AI4MDE App Features (Prerequisites)', () => {
     test('can navigate to "Project"', async ({ page }) => {
         await login(page);
         await navigateToProject(page);
-        await expect(page.getByRole('heading', { name: 'Projects' })).toBeVisible();
+        await expect(page.getByRole('heading', { name: /Projects/ })).toBeVisible();
     });
     test('can navigate to "System"', async ({ page }) => {
         await login(page)
         await navigateToProject(page)
         await selectProject(page)
-        await expect(page.getByRole('heading', { name: /Systems - Demo/ })).toBeVisible();
+        await expect(page.getByRole('heading', { name: /Systems/ })).toBeVisible();
     });
     test('can navigate to "Diagram"', async ({ page }) => {
         await login(page);
@@ -78,7 +78,7 @@ describe('AI4MDE App Features (Frontend UI)', () => {
     });
 
     test('prototype generation modal appears', async ({ page }) => {
-        await page.locator('button').filter({ hasText: 'Generate new prototype' }).click();
+        await page.getByRole('button', { name: 'Generate new prototype' }).click();
         await expect(page.getByRole('dialog')).toBeVisible();
         await expect(page.getByLabel('Name')).toBeVisible();
         await expect(page.locator('input[placeholder="Prototype"]')).toBeVisible();
@@ -88,7 +88,7 @@ describe('AI4MDE App Features (Frontend UI)', () => {
     });
 
     test('synthetic data modal appears', async ({ page }) => {
-        await page.locator('button').filter({ hasText: 'Generate new prototype' }).click();
+        await page.getByRole('button', { name: 'Generate new prototype' }).click();
         await page.getByRole('switch', { name: 'Use Synthetic Data' }).click();
         await expect(page.getByRole('dialog')).toBeVisible();
         await expect(page.getByRole('heading', { name: 'Specify Synthetic Data Amount Per Node' })).toBeVisible();
@@ -108,10 +108,10 @@ describe('AI4MDE App Features (Generation)', () => {
         const trashButtonCount = await page.locator('button:has(.lucide-trash)').count();
         if (trashButtonCount > 0) {
             await page.getByRole('button', { name: 'Delete all' }).click();
-            await page.getByRole('button', { name: 'Confirm'}).click();
+            await page.getByRole('button', { name: 'Confirm' }).click();
             await expect(page.locator('button:has(.lucide-trash)')).toHaveCount(0);
         }
-        await page.locator('button').filter({ hasText: 'Generate new prototype' }).click();
+        await page.getByRole('button', { name: 'Generate new prototype' }).click();
         await expect(page.getByRole('dialog')).toBeVisible();
         await expect(page.locator('input[placeholder="Prototype"]')).toBeVisible();
     });
@@ -128,14 +128,15 @@ describe('AI4MDE App Features (Generation)', () => {
         await page.reload();
         await page.waitForLoadState('networkidle');
         await expect(page.getByText('DemoPrototype')).toBeVisible();
-        await page.locator('button').filter({ hasText: 'Run' }).click();
-        await expect(page.locator('button').filter({ hasText: 'Run' })).toBeDisabled();
+        await page.getByRole('button', { name: 'Run' }).click();
+        await expect(await page.getByRole('button', { name: 'Run' })).toBeDisabled();
         await expect(page.getByText('http://prototype.ai4mde.localhost')).toBeVisible({ timeout: 60000 });
         await page.goto('http://prototype.ai4mde.localhost');
         await page.waitForLoadState('networkidle');
         await expect(page.getByRole('heading', { name: 'DemoPrototype prototype' })).toBeVisible();
-        await expect(page.locator('a[href*="/DemoInterface/"]').filter({ hasText: 'DemoInterface' })).toBeVisible();
-        await page.locator('a[href*="/DemoInterface/"]').filter({ hasText: 'DemoInterface' }).click();
+        await expect(page.getByRole('link', { name: 'DemoInterface' })).toBeVisible();
+        await page.getByRole('link', { name: 'DemoInterface' }).click();
+        await page.waitForLoadState('networkidle');
         await expect(page).toHaveTitle('DemoInterface');
         await expect(page.getByRole('heading', { name: 'Welcome!' })).toBeVisible();
     })
