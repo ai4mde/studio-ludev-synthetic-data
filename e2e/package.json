@@ -4,9 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "playwright test",
-    "test:report": "playwright show-report",
-    "test:headed": "playwright test --headed"
+    "test": "playwright test --project=chromium",
+    "test:report": "playwright show-report"
   },
   "keywords": [],
   "author": "",
