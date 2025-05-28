@@ -165,11 +165,22 @@ PROTOTYPE_METADATA = {
 class SyntheticDataUnitTests(unittest.TestCase):
     def test_make_prompt_correct_model(self):
         response = schema_extract.make_synthetic_data_prompt([{'model_name': 'Manufacturer', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, {'name': 'name1', 'type': 'CharField', 'choices': None}, {'name': 'age1', 'type': 'IntegerField', 'choices': None}]}], 3)
-        assert type(response) == str, f"make prompt correct_model failed: {response}"
+        assert type(response) == str, f"Make prompt correct_model failed: {response}"
 
     def test_make_prompt_correct_multiple_models(self):
-        response = schema_extract.make_synthetic_data_prompt([{'model_name': 'Delivery', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, {'name': 'name', 'type': 'CharField', 'choices': None}, {'name': 'licence1', 'type': 'IntegerField', 'choices': None}, {'name': 'Manufacturer', 'type': 'ForeignKey', 'choices': None}]}, {'model_name': 'Manufacturer', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, {'name': 'name1', 'type': 'CharField', 'choices': None}, {'name': 'age1', 'type': 'IntegerField', 'choices': None}]}, {'model_name': 'Person10', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, {'name': 'name10', 'type': 'CharField', 'choices': None}, {'name': 'age10', 'type': 'IntegerField', 'choices': None}]}], 3)
-        assert type(response) == str, f"make prompt multiple_models failed: {response}"
+        response = schema_extract.make_synthetic_data_prompt([
+            {'model_name': 'Delivery', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, 
+                                                  {'name': 'name', 'type': 'CharField', 'choices': None}, 
+                                                  {'name': 'licence1', 'type': 'IntegerField', 'choices': None}, 
+                                                  {'name': 'Manufacturer', 'type': 'ForeignKey', 'choices': None}]}, 
+            {'model_name': 'Manufacturer', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, 
+                                                      {'name': 'name1', 'type': 'CharField', 'choices': None}, 
+                                                      {'name': 'age1', 'type': 'IntegerField', 'choices': None}]}, 
+            {'model_name': 'Person10', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, 
+                                                  {'name': 'name10', 'type': 'CharField', 'choices': None}, 
+                                                  {'name': 'age10', 'type': 'IntegerField', 'choices': None}]}
+            ], 3)
+        assert type(response) == str, f"Make prompt multiple_models failed: {response}"
 
     def test_make_prompt_incorrect_model(self):
         with self.assertRaises(ValueError):
@@ -190,7 +201,44 @@ class SyntheticDataUnitTests(unittest.TestCase):
     def test_make_prompt_no_fields(self):
         with self.assertRaises(ValueError):
             schema_extract.make_synthetic_data_prompt([], 3)
+    
+    # Thought I'd add this test because it seems like a straightforward (though perhaps unlikely) edge case
+    def test_make_prompt_no_models(self):
+        with self.assertRaises(ValueError):
+            schema_extract.make_synthetic_data_prompt(None, 3)
 
+class ToposortUnitTests(unittest.TestCase):
+    def test_toposort_no_dependencies(self):
+        models = [
+            {'model_name': 'A', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}]},
+            {'model_name': 'B', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}]}
+            ]
+        sorted_models = schema_extract.toposort_models(models, hidden_models=[])
+        # Made it dynamic to avoid hardcoding the order if the model names change or the list gets longer
+        input_names = [m['model_name'] for m in sorted_models]
+        output_names = [m['model_name'] for m in models]
+        assert input_names == output_names, f"Toposort with no dependencies failed: {sorted_models}"
+
+    def test_toposort_single_dependency(self):
+        models = [
+            {'model_name': 'A', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None},
+                                           {'name': 'B', 'type': 'ForeignKey', 'choices': None}]},
+            {'model_name': 'B', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}]}
+            ]
+        sorted_names = schema_extract.toposort_models(models, hidden_models=[])
+        assert sorted_names.index('A') < sorted_names.index('B'), f"'A' should come before 'B': {sorted_names}"
+
+    def test_toposort_multiple_dependencies(self):
+        models = [
+            {'model_name': 'A', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None},
+                                           {'name': 'B', 'type': 'ForeignKey', 'choices': None}]},
+            {'model_name': 'B', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None},
+                                           {'name': 'C', 'type': 'ForeignKey', 'choices': None}]},
+            {'model_name': 'C', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}]}
+            ]
+        sorted_names = schema_extract.toposort_models(models, hidden_models=[])
+        assert sorted_names.index('A') < sorted_names.index('B'), f"'A' should come before 'B': {sorted_names}"
+        assert sorted_names.index('B') < sorted_names.index('C'), f"'B' should come before 'C': {sorted_names}"
     
 
 class SyntheticDataIntegrationTests(unittest.TestCase):
