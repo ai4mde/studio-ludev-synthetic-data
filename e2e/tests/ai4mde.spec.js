@@ -129,7 +129,7 @@ describe('AI4MDE App Features (Generation)', () => {
         await page.waitForLoadState('networkidle');
         await expect(page.getByText('DemoPrototype')).toBeVisible();
         await page.getByRole('button', { name: 'Run' }).click();
-        await expect(await page.getByRole('button', { name: 'Run' })).toBeDisabled();
+        await expect(page.getByRole('button', { name: 'Run' })).toBeDisabled();
         await expect(page.getByText('http://prototype.ai4mde.localhost')).toBeVisible({ timeout: 60000 });
         await page.goto('http://prototype.ai4mde.localhost');
         await page.waitForLoadState('networkidle');
