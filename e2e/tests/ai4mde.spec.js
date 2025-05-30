@@ -56,7 +56,7 @@ describe('AI4MDE App Features (Prerequisites)', () => {
         await expect(page.getByRole('heading', { name: 'Usecase Diagram' })).toBeVisible();
         await expect(page.getByRole('heading', { name: 'Component Diagram' })).toBeVisible();
     });
-    test ('can navigate to "Prototypes"', async ({ page }) => {
+    test('can navigate to "Prototypes"', async ({ page }) => {
         await login(page);
         await navigateToProject(page);
         await selectProject(page);
