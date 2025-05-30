@@ -27,7 +27,9 @@ docker-compose up -d
 1. Open your web browser and navigate to the AI4MDE Studio web application.
 2. Create the class diagrams using the tools provided in the AI4MDE Studio.
 
-For now, the project, system, and interface you create must be called 'DemoProject', 'DemoSystem', and 'DemoInterface' respectively.
+### 4. Update the Configuration
+
+Update `/config/testConfig.js` to match the names of the project, system, and interface you have chosen.
 
 ## Running the Tests
 

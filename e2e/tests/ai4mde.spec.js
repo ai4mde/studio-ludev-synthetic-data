@@ -1,5 +1,6 @@
 // @ts-check
 import { beforeEach, describe, expect, test } from '@playwright/test';
+import config from '../config/testConfig';
 
 const login = async (page) => {
     await page.goto('/');
@@ -14,12 +15,12 @@ const navigateToProject = async (page) => {
     await page.waitForLoadState('networkidle');
 }
 
-const selectProject = async (page, projectName = 'DemoProject') => {
+const selectProject = async (page, projectName = config.projectName) => {
     await page.getByRole('link', { name: projectName }).click();
     await page.waitForLoadState('networkidle');
 }
 
-const selectSystem = async (page, systemName = 'DemoSystem') => {
+const selectSystem = async (page, systemName = config.systemName) => {
     await page.getByRole('link', { name: systemName }).click();
     await page.waitForLoadState('networkidle');
 }
@@ -117,7 +118,7 @@ describe('AI4MDE App Features (Generation)', () => {
     });
 
     test('can generate and visit prototype without custom instructions', async ({ page }) => {
-        await page.fill('input[placeholder="Prototype"]', 'DemoPrototype')
+        await page.fill('input[placeholder="Prototype"]', config.prototypeName)
         await page.getByRole('switch', { name: 'Use Authentication' }).click();
         await page.getByRole('switch', { name: 'Use Synthetic Data' }).click();
         await page.getByRole('button', { name: 'Done' }).click();
@@ -127,17 +128,17 @@ describe('AI4MDE App Features (Generation)', () => {
         await expect(page.getByText('Generating')).not.toBeVisible({ timeout: 60000 }); // 1 minute
         await page.reload();
         await page.waitForLoadState('networkidle');
-        await expect(page.getByText('DemoPrototype')).toBeVisible();
+        await expect(page.getByText(config.prototypeName)).toBeVisible();
         await page.getByRole('button', { name: 'Run' }).click();
         await expect(page.getByRole('button', { name: 'Run' })).toBeDisabled();
         await expect(page.getByText('http://prototype.ai4mde.localhost')).toBeVisible({ timeout: 60000 });
         await page.goto('http://prototype.ai4mde.localhost');
         await page.waitForLoadState('networkidle');
-        await expect(page.getByRole('heading', { name: 'DemoPrototype prototype' })).toBeVisible();
-        await expect(page.getByRole('link', { name: 'DemoInterface' })).toBeVisible();
-        await page.getByRole('link', { name: 'DemoInterface' }).click();
+        await expect(page.getByRole('heading', { name: config.prototypeName + ' prototype' })).toBeVisible();
+        await expect(page.getByRole('link', { name: config.interfaceName })).toBeVisible();
+        await page.getByRole('link', { name: config.interfaceName }).click();
         await page.waitForLoadState('networkidle');
-        await expect(page).toHaveTitle('DemoInterface');
+        await expect(page).toHaveTitle(config.interfaceName);
         await expect(page.getByRole('heading', { name: 'Welcome!' })).toBeVisible();
     })
 })
