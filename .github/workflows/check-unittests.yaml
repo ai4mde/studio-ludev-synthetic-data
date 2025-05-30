@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest # Switch to github-arc later
     env:
       LANG: C.UTF-8
-      
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -67,7 +67,7 @@ jobs:
 
       - name: Install Poetry
         uses: abatilo/actions-poetry@v3
-        run: poetry config virtualenvs.create false
+      - run: poetry config virtualenvs.create false
 
       # WORKING DIRECTORY IS ./PROTOTYPES
       - name: Cache dependencies - prototypes
