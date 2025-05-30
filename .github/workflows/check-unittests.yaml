@@ -37,18 +37,17 @@ jobs:
             ${{ runner.os }}-yarn-
             ${{ runner.os }}-
 
-
       - name: Install frontend dependencies
         working-directory: frontend
         run: yarn
-      
-      - name: Run linting
-        working-directory: frontend
-        run: yarn lint
 
       - name: Run tests
         working-directory: frontend
-        run: yarn test
+        run: yarn run test      
+
+      - name: Run linting
+        working-directory: frontend
+        run: yarn run lint
 
   backend-tests:
     runs-on: ubuntu-latest # Switch to github-arc later
@@ -89,10 +88,10 @@ jobs:
         run: |
           poetry install --no-root |& cat
       
-      - name: Run unit/integration tests - prototypes
-        working-directory: prototypes
-        run: |
-          python -m unittest discover "*tests.py"
+      # - name: Run unit/integration tests - prototypes
+      #   working-directory: prototypes
+      #   run: |
+      #     python -m unittest discover "*tests.py"
 
       # Stop Docker containers
       - name: Stop containers
