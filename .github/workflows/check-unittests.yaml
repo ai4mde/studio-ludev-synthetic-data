@@ -81,12 +81,6 @@ jobs:
         run: |
           poetry install --no-root |& cat
       
-      - name: Run Pylint - prototypes
-        working-directory: ./prototypes
-        run: |
-          poetry run pip install pylint
-          poetry run pylint $(git ls-files '*.py') # Only if tracked by git
-
       - name: Run unit/integration tests - prototypes
         working-directory: ./prototypes
         run: |
@@ -96,3 +90,42 @@ jobs:
       - name: Stop containers
         if: always()
         run: docker compose -f "docker-compose.yaml" down
+
+  backend-linting:
+    runs-on: ubuntu-latest # Switch to github-arc later
+    env:
+      LANG: C.UTF-8
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install Poetry
+        uses: abatilo/actions-poetry@v3
+        run: poetry config virtualenvs.create false
+
+      # WORKING DIRECTORY IS ./PROTOTYPES
+      - name: Cache dependencies - prototypes
+        working-directory: ./prototypes
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pypoetry
+          key: ${{ runner.os }}-poetry-${{ hashFiles('prototypes/poetry.lock', 'prototypes/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+
+      - name: Install dependencies - prototypes
+        working-directory: ./prorotypes
+        run: |
+          poetry install --no-root |& cat
+      
+      - name: Run Pylint - prototypes
+        working-directory: ./prototypes
+        run: |
+          poetry run pip install pylint
+          poetry run pylint $(git ls-files '*.py') # Only if tracked by git
