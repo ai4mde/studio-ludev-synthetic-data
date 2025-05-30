@@ -28,11 +28,15 @@ jobs:
         run: npm install -g yarn
 
       - name: Cache yarn dependencies
-        working-directory: ./frontend
-        uses: actions/cache@v3
+        # working-directory: ./frontend
+        uses: actions/cache@v4
         with:
           path: ~/.cache/yarn
           key: ${{ runner.os }}-yarn-${{ hashFiles('frontend/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+            ${{ runner.os }}-
+
 
       - name: Install frontend dependencies
         working-directory: ./frontend
@@ -71,13 +75,14 @@ jobs:
 
       # WORKING DIRECTORY IS ./PROTOTYPES
       - name: Cache dependencies - prototypes
-        working-directory: ./prototypes
-        uses: actions/cache@v3
+        # working-directory: ./prototypes
+        uses: actions/cache@v4
         with:
           path: ~/.cache/pypoetry
           key: ${{ runner.os }}-poetry-${{ hashFiles('prototypes/poetry.lock', 'prototypes/pyproject.toml') }}
           restore-keys: |
             ${{ runner.os }}-poetry-
+            ${{ runner.os }}-
 
       - name: Install dependencies - prototypes
         working-directory: ./prorotypes
@@ -114,13 +119,14 @@ jobs:
 
       # WORKING DIRECTORY IS ./PROTOTYPES
       - name: Cache dependencies - prototypes
-        working-directory: ./prototypes
+        # working-directory: ./prototypes
         uses: actions/cache@v3
         with:
           path: ~/.cache/pypoetry
           key: ${{ runner.os }}-poetry-${{ hashFiles('prototypes/poetry.lock', 'prototypes/pyproject.toml') }}
           restore-keys: |
             ${{ runner.os }}-poetry-
+            ${{ runner.os }}-
 
       - name: Install dependencies - prototypes
         working-directory: ./prorotypes
