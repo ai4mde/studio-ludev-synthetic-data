@@ -85,7 +85,7 @@ jobs:
             ${{ runner.os }}-
 
       - name: Install dependencies - prototypes
-        working-directory: prorotypes
+        working-directory: prototypes
         run: |
           poetry install --no-root |& cat
       
@@ -129,7 +129,7 @@ jobs:
             ${{ runner.os }}-
 
       - name: Install dependencies - prototypes
-        working-directory: prorotypes
+        working-directory: prototypes
         run: |
           poetry install --no-root |& cat
       
