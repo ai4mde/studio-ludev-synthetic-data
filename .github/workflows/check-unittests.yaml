@@ -1,0 +1,139 @@
+name: Automated Tests
+
+on:
+  push:
+    branches:
+    # - main
+    # - main/**
+      - develop
+      - develop/**
+  pull_request:
+    branches:
+    # - main
+    # - main/**
+      - develop
+      - develop/**
+
+jobs:
+  frontend-tests:
+    runs-on: ubuntu-latest # Switch to github-arc later
+    env:
+      LANG: C.UTF-8
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install yarn
+        run: npm install -g yarn
+
+      - name: Cache yarn dependencies
+        # working-directory: frontend
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/yarn
+          key: ${{ runner.os }}-yarn-${{ hashFiles('frontend/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+            ${{ runner.os }}-
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: yarn
+
+      - name: Run tests
+        working-directory: frontend
+        run: yarn run test      
+
+      - name: Run linting
+        working-directory: frontend
+        run: yarn run lint
+
+  backend-tests:
+    runs-on: ubuntu-latest # Switch to github-arc later
+    env:
+      LANG: C.UTF-8
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Start Docker containers
+      - name: Start containers
+        run: docker compose -f "docker-compose.yaml" up -d --build
+        
+      # We could make a code block for setting up a conda env as well
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install Poetry
+        uses: abatilo/actions-poetry@v3
+      - run: poetry config virtualenvs.create false
+
+      # WORKING DIRECTORY IS ./PROTOTYPES
+      - name: Cache dependencies - prototypes
+        # working-directory: prototypes
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pypoetry
+          key: ${{ runner.os }}-poetry-${{ hashFiles('prototypes/poetry.lock', 'prototypes/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+            ${{ runner.os }}-
+
+      - name: Install dependencies - prototypes
+        working-directory: prototypes
+        run: |
+          poetry install --no-root |& cat
+      
+      # - name: Run unit/integration tests - prototypes
+      #   working-directory: prototypes
+      #   run: |
+      #     python -m unittest discover "*tests.py"
+
+      # Stop Docker containers
+      - name: Stop containers
+        if: always()
+        run: docker compose -f "docker-compose.yaml" down
+
+  backend-linting:
+    runs-on: ubuntu-latest # Switch to github-arc later
+    env:
+      LANG: C.UTF-8
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install Poetry
+        uses: abatilo/actions-poetry@v3
+      - run: poetry config virtualenvs.create false
+
+      # WORKING DIRECTORY IS ./PROTOTYPES
+      - name: Cache dependencies - prototypes
+        # working-directory: prototypes
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pypoetry
+          key: ${{ runner.os }}-poetry-${{ hashFiles('prototypes/poetry.lock', 'prototypes/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+            ${{ runner.os }}-
+
+      - name: Install dependencies - prototypes
+        working-directory: prototypes
+        run: |
+          poetry install --no-root |& cat
+      
+      - name: Run Pylint - prototypes
+        working-directory: prototypes
+        run: |
+          poetry run pip install pylint
+          poetry run pylint $(git ls-files '*.py') # Only if tracked by git
