@@ -14,7 +14,7 @@ from graphlib import TopologicalSorter
 ##############################################
 
 def call_groq(prompt: str, model: str = 'llama-3.3-70b-versatile') -> str:
-    api_key = "place key here"    
+    api_key = "key"    
     url = "https://api.groq.com/openai/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {api_key}",
@@ -84,7 +84,7 @@ def toposort_models(models, hidden_models):
     return [*ts.static_order()] 
 
 
-def make_synthetic_data_prompt(model_definitions, syntheticInstructions, syntheticCounts):
+def make_synthetic_data_prompt(model_definitions, syntheticInstructions, syntheticCounts, syntheticInstructionsPerNode):
     prompt = f"""
 
     You are going to generate synthetic sample data for a database based on Django model definitions.
@@ -92,16 +92,20 @@ def make_synthetic_data_prompt(model_definitions, syntheticInstructions, synthet
     2) Make sure that the data are plausible real world values.
     3) You are going to return one json object, within this json object each model name is associated with an array of instances.
     4) Return only one unified json object made from the model arrays please, NO OTHER TEXT THAN JSON.
-
-    {syntheticInstructions}
     """
+    if syntheticInstructions.strip():
+        prompt += f"5) Apply the following global instructions for each model when applicable:\n{syntheticInstructions.strip()}\n"
 
     for model_def in model_definitions:
         model_name = model_def["model_name"]
-        num_records = syntheticCounts.get(model_name.lower(), 10)  # fallback to 10
-        #print("number records count", num_records)
+        lower_model_name = model_name.lower()
+
+        num_records = syntheticCounts.get(lower_model_name, 10)  #fallback to 10
+        table_instruction = syntheticInstructionsPerNode.get(lower_model_name, "").strip() #fallback to empty
         
         print(f"\nGenerating data for model: {model_name} ({num_records} records)")
+        if table_instruction:
+            print(f"Using custom instruction: {table_instruction}")
 
         single_model_def = {
             "model_name": model_def["model_name"],
@@ -109,8 +113,12 @@ def make_synthetic_data_prompt(model_definitions, syntheticInstructions, synthet
         }
         formatted_model_def = json.dumps(single_model_def, indent=2)
 
-        prompt = prompt + f"  Generate {num_records} synthetic records based on this model definition. {formatted_model_def}   "
-        
+        prompt += f"\nGenerate {num_records} synthetic records based on the following model definition:\n{formatted_model_def}\n"
+
+        if table_instruction:
+            prompt += f"With these additional instructions for model {model_name}: {table_instruction}\n"
+    
+    print("prompt to llm: " , prompt)
     return prompt
 
 def extract_json_from_response(llm_response):
@@ -149,7 +157,7 @@ def save_records(model_class, synthetic_data, model_name, name_to_id_to_id_mappi
     
     return llm_id_to_auto_id
 
-def main(PROTOTYPE_NAME, SYSTEM, syntheticInstructions, syntheticCounts):
+def main(PROTOTYPE_NAME, SYSTEM, syntheticInstructions, syntheticCounts, syntheticInstructionsPerNode):
     setup_django(PROTOTYPE_NAME, SYSTEM)
 
     hidden_models = ["LogEntry", "Permission", "Group", "User", "ContentType", "Session"]
@@ -158,7 +166,7 @@ def main(PROTOTYPE_NAME, SYSTEM, syntheticInstructions, syntheticCounts):
 
     insert_order = toposort_models(models,hidden_models)
 
-    SYN_DATA_PROMPT = make_synthetic_data_prompt(model_definitions, syntheticInstructions, syntheticCounts)
+    SYN_DATA_PROMPT = make_synthetic_data_prompt(model_definitions, syntheticInstructions, syntheticCounts, syntheticInstructionsPerNode)
     # print(SYN_DATA_PROMPT)
     
     total_json = None
@@ -192,11 +200,12 @@ if __name__ == "__main__":
     SYSTEM = sys.argv[2]
     syntheticInstructions = sys.argv[3] if len(sys.argv) > 3 else ""
     syntheticCounts = json.loads(sys.argv[4]) if len(sys.argv) > 4 else {}
+    syntheticInstructionsPerNode = json.loads(sys.argv[5]) if len(sys.argv) > 5 else {}
 
-    #print("syn instruc: " , syntheticInstructions)
-    #print("syn count: " , syntheticCounts)
-
-    main(PROTOTYPE_NAME, SYSTEM, syntheticInstructions, syntheticCounts)
+    #print("schema_extract.py global instruciton: " , syntheticInstructions)
+    #print("schema_extract.py count: " , syntheticCounts)
+    print("schema_extract.py cusotm instruciton: ", syntheticInstructionsPerNode)
+    main(PROTOTYPE_NAME, SYSTEM, syntheticInstructions, syntheticCounts, syntheticInstructionsPerNode)
 
 
 

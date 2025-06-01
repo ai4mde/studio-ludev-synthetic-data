@@ -5,6 +5,7 @@ import os
 import time
 import socket
 import signal
+import json
 
 app = Flask(__name__)
 
@@ -114,20 +115,16 @@ def generate_prototype():
     except subprocess.CalledProcessError:
         return f"Failed to generate prototype, id={id}", 500
 
-    # print(metadata)
+    #print(metadata)
+
+    #get the choice of using of synthetic data
     retrieveUseSyntheticData = subprocess.run(
         ["python3", GET_GLOBALS_PATH, "get_synth", metadata],
         stdout=subprocess.PIPE,
         text=True
     )
-    # Backend will use Synthetic data here
     useSyntheticData = retrieveUseSyntheticData.stdout.strip() == "True"
-    if useSyntheticData:
-        print("Use synthetic data.")
-    else:
-        print("Do not use synthetic data.")
     
-
     # Get synthetic instructions
     retrieveInstructions = subprocess.run(
         ["python3", GET_GLOBALS_PATH, "get_instr", metadata],
@@ -142,13 +139,25 @@ def generate_prototype():
         stdout=subprocess.PIPE,
         text=True
     )
-    import json
     syntheticCounts = json.loads(retrieveCounts.stdout.strip())
 
-    print("Instructions:", syntheticInstructions)
-    print("Counts:", syntheticCounts)
+    # Get custom instruction per node/table
+    retrieveInstructionsPerNode = subprocess.run(
+        ["python3", GET_GLOBALS_PATH, "get_instr_per_node", metadata],
+        stdout=subprocess.PIPE,
+        text=True
+    )
+    syntheticInstructionsPerNode = json.loads(retrieveInstructionsPerNode.stdout.strip())
 
-    subprocess.call(["python3", "/usr/src/prototypes/backend/schema_extract.py", name, system, syntheticInstructions, json.dumps(syntheticCounts)])   #added this for now to test the working of schema_extract.py
+    print("api.py global instructions:", syntheticInstructions)
+    print("api.py counts:", syntheticCounts)
+    print("api.py instructions per node:", syntheticInstructionsPerNode)
+
+    if useSyntheticData:
+        print("Use synthetic data.")
+        subprocess.call(["python3", "/usr/src/prototypes/backend/schema_extract.py", name, system, syntheticInstructions, json.dumps(syntheticCounts), json.dumps(syntheticInstructionsPerNode)])   #added this for now to test the working of schema_extract.py
+    else:
+        print("Do not use synthetic data.")
 
     # TODO: this database retrieval should be done using ids
     if 'database_prototype_name' in data:
