@@ -1,6 +1,6 @@
 import unittest
 import requests
-import schema_extract  
+import schema_extract
 import time
 import subprocess
 import json
