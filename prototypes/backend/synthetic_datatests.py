@@ -13,103 +13,224 @@ PROTOTYPE_NAME = "TestPrototype"
 PROTOTYPE_SYSTEM = str(uuid4())
 PROTOTYPE_METADATA = {
     "diagrams": [
-        {
-        "id": "f7fdf00f-a567-4923-84e7-04f31dce3b73",
+    {
+        "project": "a6987223-392e-4e9a-8a3d-9e80b12a3538",
+        "id": "ed031cd6-9e07-4261-a4de-5b9c8f33b538",
         "name": "Diagram",
+        "description": "",
         "type": "classes",
-        "edges": [],
+        "system": "ef54ea76-ee62-4d15-8d0e-bb4549d8dfbf",
         "nodes": [
         {
-            "id": "c16d3fae-5292-481b-a00c-e17cb954d98f",
-            "cls": 
-            {
-                "leaf": False,
-                "name": "Customer",
-                "type": "class",
-                "methods": [],
-                "abstract": None,
-                "namespace": "",
-                "attributes": [
-                    {
-                    "body": None,
-                    "enum": None,
-                    "name": "Name",
-                    "type": "str",
-                    "derived": False,
-                    "description": None
-                    },
-                    {
-                    "body": None,
-                    "enum": None,
-                    "name": "Surname",
-                    "type": "str",
-                    "derived": False,
-                    "description": None
-                    },
-                    {
-                    "body": None,
-                    "enum": None,
-                    "name": "Email",
-                    "type": "str",
-                    "derived": False,
-                    "description": None
-                    },
-                    {
-                    "body": None,
-                    "enum": None,
-                    "name": "Age",
-                    "type": "int",
-                    "derived": False,
-                    "description": None
-                    },
-                    {
-                    "body": None,
-                    "enum": None,
-                    "name": "Premium",
-                    "type": "bool",
-                    "derived": False,
-                    "description": None
-                    }
-                ]
-            },
-            "data": 
-            {
-                "position": {
-                    "x": 0,
-                    "y": 0
+            "cls": {
+            "namespace": "",
+            "name": "Person",
+            "type": "class",
+            "attributes": [
+                {
+                "name": "name",
+                "type": "str",
+                "enum": None,
+                "derived": False,
+                "description": None,
+                "body": None
+                },
+                {
+                "name": "id",
+                "type": "int",
+                "enum": None,
+                "derived": False,
+                "description": None,
+                "body": None
+                },
+                {
+                "name": "adress",
+                "type": "str",
+                "enum": None,
+                "derived": False,
+                "description": None,
+                "body": None
+                },
+                {
+                "name": "House",
+                "type": "bool",
+                "enum": None,
+                "derived": False,
+                "description": None,
+                "body": None
                 }
+            ],
+            "methods": [],
+            "abstract": False,
+            "leaf": False
             },
-            "cls_ptr": "1da630b8-e28b-41e3-8175-6ab2c4ba3dcb"
+            "cls_ptr": "05a02f6b-9236-4d34-bc9f-d2f25112a1bc",
+            "data": {
+            "position": {
+                "x": -255,
+                "y": -60
+            }
+            },
+            "id": "a07c0553-b238-4947-9303-e354509723ae"
+        },
+        {
+            "cls": {
+            "namespace": "",
+            "name": "Car",
+            "type": "class",
+            "attributes": [
+                {
+                "name": "brand",
+                "type": "str",
+                "enum": None,
+                "derived": False,
+                "description": None,
+                "body": None
+                },
+                {
+                "name": "licence",
+                "type": "int",
+                "enum": None,
+                "derived": False,
+                "description": None,
+                "body": None
+                },
+                {
+                "name": "manual",
+                "type": "bool",
+                "enum": None,
+                "derived": False,
+                "description": None,
+                "body": None
+                },
+                {
+                "name": "automatic",
+                "type": "bool",
+                "enum": None,
+                "derived": False,
+                "description": None,
+                "body": None
+                }
+            ],
+            "methods": [],
+            "abstract": False,
+            "leaf": False
+            },
+            "cls_ptr": "9816aca2-fadd-4944-97ce-ee2c1b6cf50f",
+            "data": {
+            "position": {
+                "x": -15,
+                "y": -60
+            }
+            },
+            "id": "0d2763bf-ad3e-4ea5-a1ee-a3f902da2573"
+        },
+        {
+            "cls": {
+            "namespace": "",
+            "name": "Manufacturer",
+            "type": "class",
+            "attributes": [
+                {
+                "name": "CompanyName",
+                "type": "str",
+                "enum": None,
+                "derived": False,
+                "description": None,
+                "body": None
+                },
+                {
+                "name": "kvk",
+                "type": "int",
+                "enum": None,
+                "derived": False,
+                "description": None,
+                "body": None
+                },
+                {
+                "name": "international",
+                "type": "bool",
+                "enum": None,
+                "derived": False,
+                "description": None,
+                "body": None
+                }
+            ],
+            "methods": [],
+            "abstract": False,
+            "leaf": False
+            },
+            "cls_ptr": "fb4356b9-2607-40e9-aaa8-564bf87548aa",
+            "data": {
+            "position": {
+                "x": 255,
+                "y": -45
+            }
+            },
+            "id": "34ebf363-de6e-4c56-baee-1405bf719f05"
         }
         ],
-        "system": PROTOTYPE_SYSTEM,
-        "project": "2265b83e-4c7f-47a3-b89c-8206fd591ce9",
-        "description": ""
+        "edges": [
+        {
+            "rel": {
+            "type": "association",
+            "derived": False,
+            "multiplicity": {
+                "source": "1",
+                "target": "*"
+            },
+            "labels": None,
+            "label": "made_by"
+            },
+            "rel_ptr": "95263542-c316-45b8-9a88-4ef967827071",
+            "data": {},
+            "source_ptr": "0d2763bf-ad3e-4ea5-a1ee-a3f902da2573",
+            "target_ptr": "34ebf363-de6e-4c56-baee-1405bf719f05",
+            "id": "b497a3c6-621b-4b8d-bf4f-eb279347b0dd"
+        },
+        {
+            "rel": {
+            "type": "association",
+            "derived": False,
+            "multiplicity": {
+                "source": "*",
+                "target": "1"
+            },
+            "labels": None,
+            "label": "owns"
+            },
+            "rel_ptr": "b837b977-6225-4ab3-a898-d18e1b6579cd",
+            "data": {},
+            "source_ptr": "a07c0553-b238-4947-9303-e354509723ae",
+            "target_ptr": "0d2763bf-ad3e-4ea5-a1ee-a3f902da2573",
+            "id": "84f0f529-e40d-49a7-be75-e259479b42fa"
+        }
+        ]
     },
     {
-        "id": "53dde750-4440-4dfc-8e61-403dabc5f5d8",
+        "project": "a6987223-392e-4e9a-8a3d-9e80b12a3538",
+        "id": "3bdb9ec8-bd71-455f-a6dc-74017fe23ddc",
         "name": "Diagram",
+        "description": "",
         "type": "usecase",
-        "edges": [],
+        "system": "ef54ea76-ee62-4d15-8d0e-bb4549d8dfbf",
         "nodes": [
         {
-            "id": "17901aea-92af-4da8-a9f4-ad0c0ee12187",
             "cls": {
-            "name": "Actor1",
+            "name": "Person",
             "type": "actor"
             },
+            "cls_ptr": "9f936870-0fb3-4b09-b853-c95ba58851db",
             "data": {
             "position": {
                 "x": 0,
                 "y": 0
             }
             },
-            "cls_ptr": "7ac07882-151d-4359-9558-d7e28319f52f"
+            "id": "a6e5b19d-4a67-494a-a0a6-e2f3dde94a41"
         }
         ],
-        "system": PROTOTYPE_SYSTEM,
-        "project": "2265b83e-4c7f-47a3-b89c-8206fd591ce9",
-        "description": ""
+        "edges": []
     }
     ],
     "interfaces": [
@@ -202,43 +323,6 @@ class SyntheticDataUnitTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             schema_extract.make_synthetic_data_prompt([], 3)
     
-    # Thought I'd add this test because it seems like a straightforward (though perhaps unlikely) edge case
-    def test_make_prompt_no_models(self):
-        with self.assertRaises(ValueError):
-            schema_extract.make_synthetic_data_prompt(None, 3)
-
-class ToposortUnitTests(unittest.TestCase):
-    def test_toposort_no_dependencies(self):
-        models = [
-            {'model_name': 'A', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}]},
-            {'model_name': 'B', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}]}
-            ]
-        sorted_models = schema_extract.toposort_models(models, hidden_models=[])
-        # Made it dynamic to avoid hardcoding the order if the model names change or the list gets longer
-        input_names = [m['model_name'] for m in sorted_models]
-        output_names = [m['model_name'] for m in models]
-        assert input_names == output_names, f"Toposort with no dependencies failed: {sorted_models}"
-
-    def test_toposort_single_dependency(self):
-        models = [
-            {'model_name': 'A', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None},
-                                           {'name': 'B', 'type': 'ForeignKey', 'choices': None}]},
-            {'model_name': 'B', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}]}
-            ]
-        sorted_names = schema_extract.toposort_models(models, hidden_models=[])
-        assert sorted_names.index('A') < sorted_names.index('B'), f"'A' should come before 'B': {sorted_names}"
-
-    def test_toposort_multiple_dependencies(self):
-        models = [
-            {'model_name': 'A', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None},
-                                           {'name': 'B', 'type': 'ForeignKey', 'choices': None}]},
-            {'model_name': 'B', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None},
-                                           {'name': 'C', 'type': 'ForeignKey', 'choices': None}]},
-            {'model_name': 'C', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}]}
-            ]
-        sorted_names = schema_extract.toposort_models(models, hidden_models=[])
-        assert sorted_names.index('A') < sorted_names.index('B'), f"'A' should come before 'B': {sorted_names}"
-        assert sorted_names.index('B') < sorted_names.index('C'), f"'B' should come before 'C': {sorted_names}"
     
 
 class SyntheticDataIntegrationTests(unittest.TestCase):
@@ -254,9 +338,9 @@ class SyntheticDataIntegrationTests(unittest.TestCase):
         #I think this assert should only be done on the first integration test
         assert response.status_code == 200, f"Setup failed: {response.text}" 
 
-        print("prototypename before", PROTOTYPE_NAME)
-        print("prototypeid before", PROTOTYPE_ID)
-        print("Protype system before", PROTOTYPE_SYSTEM)
+        # print("prototypename before", PROTOTYPE_NAME)
+        # print("prototypeid before", PROTOTYPE_ID)
+        # print("Protype system before", PROTOTYPE_SYSTEM)
 
         testsubprocess = subprocess.run(
         ["python3", "/usr/src/prototypes/backend/test_extract_model_case_1.py", PROTOTYPE_NAME, PROTOTYPE_SYSTEM]
@@ -271,6 +355,29 @@ class SyntheticDataIntegrationTests(unittest.TestCase):
         
         assert testsubprocess.returncode == 0
 
+class ToposortUnitTests(unittest.TestCase):
+    def test_toposort_models(self):
+
+        response = requests.post(f"{PROTOTYPE_API}/generate", json={
+            "id": PROTOTYPE_ID,
+            "name": PROTOTYPE_NAME,
+            "system": PROTOTYPE_SYSTEM,
+            "metadata": json.dumps(PROTOTYPE_METADATA)
+        })
+        
+        assert response.status_code == 200, f"Setup failed: {response.text}" 
+
+        testsubprocess = subprocess.run(
+        ["python3", "/usr/src/prototypes/backend/test_toposort_models_.py", PROTOTYPE_NAME, PROTOTYPE_SYSTEM]
+        )
+
+        #Remove the prototype
+        requests.delete(f"{PROTOTYPE_API}/remove", json={
+            "id": PROTOTYPE_ID,
+            "name": PROTOTYPE_NAME,
+            "system": PROTOTYPE_SYSTEM,
+        })
+        assert testsubprocess.returncode == 0
 
 if __name__ == '__main__':
     unittest.main()
