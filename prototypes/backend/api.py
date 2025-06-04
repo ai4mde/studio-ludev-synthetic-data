@@ -123,6 +123,7 @@ def generate_prototype():
     # Backend will use Synthetic data here
     useSyntheticData = retrieveUseSyntheticData.stdout.strip() == "True"
     if useSyntheticData:
+        subprocess.call(["python3", "/usr/src/prototypes/backend/schema_extract.py", name, system])   #added this for now to test the working of schema_extract.py
         print("Use synthetic data.")
     else:
         print("Do not use synthetic data.")

@@ -84,7 +84,13 @@ def toposort_models(models, hidden_models):
     return [*ts.static_order()] 
 
 
-def make_synthetic_data_prompt(model_definitions, syntheticInstructions, syntheticCounts):
+def make_synthetic_data_prompt(model_definitions, N_RECORDS):
+    if N_RECORDS <= 0:
+        raise ValueError("Cannot prompt the LLM to generate no records or a negative amount of records")
+    
+    if len(model_definitions) == 0:
+        raise ValueError("No model definition provided")
+
     prompt = f"""
 
     You are going to generate synthetic sample data for a database based on Django model definitions.
@@ -97,6 +103,23 @@ def make_synthetic_data_prompt(model_definitions, syntheticInstructions, synthet
     """
 
     for model_def in model_definitions:
+
+        if not isinstance(model_def, dict):
+            raise ValueError("At least one model definition is not a dictionary")
+        if not isinstance(model_def.get("model_name"), str):
+            raise ValueError
+
+        fields = model_def.get("fields")
+
+        if not isinstance(fields, list):
+            raise ValueError
+        
+        required_keys = {'name', 'type', 'choices'}
+        for field in fields:
+            if field.keys() != required_keys:
+                raise ValueError
+        
+
         model_name = model_def["model_name"]
         num_records = syntheticCounts.get(model_name.lower(), 10)  # fallback to 10
         #print("number records count", num_records)
@@ -196,7 +219,4 @@ if __name__ == "__main__":
     #print("syn instruc: " , syntheticInstructions)
     #print("syn count: " , syntheticCounts)
 
-    main(PROTOTYPE_NAME, SYSTEM, syntheticInstructions, syntheticCounts)
-
-
-
+    main(PROTOTYPE_NAME, SYSTEM, N_RECORDS)
