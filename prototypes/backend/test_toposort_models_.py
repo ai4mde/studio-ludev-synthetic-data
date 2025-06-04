@@ -53,10 +53,10 @@ except Exception as e:
 all_model_names = [model.__name__ for model in apps.get_models()]
 
 # Now treat ALL models as hidden
-model_names_sorted = toposort_models(apps.get_models(), hidden_models=all_model_names)
+all_model_names_sorted = toposort_models(apps.get_models(), all_model_names)
 
-if model_names_sorted != []:
-    print("Expected empty list when all models are hidden, got:", model_names_sorted)
+if all_model_names_sorted != []:
+    print("Expected empty list when all models are hidden, got:", all_model_names_sorted)
     exit(7)
 
 exit(0)

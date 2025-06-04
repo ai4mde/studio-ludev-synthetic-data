@@ -353,7 +353,7 @@ class SyntheticDataIntegrationTests(unittest.TestCase):
             "system": PROTOTYPE_SYSTEM,
         })
         
-        assert testsubprocess.returncode == 0
+        assert testsubprocess.returncode == 0, f"Extract model definitions test failed with return code {testsubprocess.returncode}: {testsubprocess.stderr}"
 
 class ToposortUnitTests(unittest.TestCase):
     def test_toposort_models(self):
@@ -377,7 +377,34 @@ class ToposortUnitTests(unittest.TestCase):
             "name": PROTOTYPE_NAME,
             "system": PROTOTYPE_SYSTEM,
         })
-        assert testsubprocess.returncode == 0
+        assert testsubprocess.returncode == 0, f"Toposort test failed with return code {testsubprocess.returncode}: {testsubprocess.stderr}"
+
+class SaveRecordsUnitTests(unittest.TestCase):
+    def test_save_records_models(self):
+        # First, create the prototype using the same setup pattern
+        response = requests.post(f"{PROTOTYPE_API}/generate", json={
+            "id": PROTOTYPE_ID,
+            "name": PROTOTYPE_NAME,
+            "system": PROTOTYPE_SYSTEM,
+            "metadata": json.dumps(PROTOTYPE_METADATA)
+        })
+        
+        assert response.status_code == 200, f"Setup failed: {response.text}"
+
+        # Run the test script for save_records
+        testsubprocess = subprocess.run(
+            ["python3", "/usr/src/prototypes/backend/test_save_records_models.py", PROTOTYPE_NAME, PROTOTYPE_SYSTEM]
+        )
+
+        # Clean up the prototype
+        requests.delete(f"{PROTOTYPE_API}/remove", json={
+            "id": PROTOTYPE_ID,
+            "name": PROTOTYPE_NAME,
+            "system": PROTOTYPE_SYSTEM,
+        })
+
+        assert testsubprocess.returncode == 0, f"Save records test failed with return code {testsubprocess.returncode}: {testsubprocess.stderr}"
+
 
 if __name__ == '__main__':
     unittest.main()
