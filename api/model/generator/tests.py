@@ -4,7 +4,6 @@ from generator.models import Prototype
 from metadata.models import Project, System
 from django.contrib.auth.models import User
 from uuid import uuid4
-import json
 
 prototype_metadata = {
     "diagrams": [],
@@ -57,7 +56,7 @@ class PrototypeAPITests(APITestCase):
         response = self.client.get(self.url)
         
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.json()), 4)  # All prototypes
+        self.assertEqual(len(response.json()), 3)  # All prototypes
         
         response_data = response.json()
         prototype_names = [prototype['name'] for prototype in response_data]

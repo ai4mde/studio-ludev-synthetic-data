@@ -109,8 +109,6 @@ def generate_prototype():
     name = data.get('name')
     system = data.get('system')
     metadata = data.get('metadata')
-
-    print("In the generate endpoint:", id, name, system)
     try:
         subprocess.run([GENERATOR_PATH, id, system, name, metadata], check=True)
     except subprocess.CalledProcessError:
