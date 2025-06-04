@@ -113,7 +113,8 @@ def generate_prototype():
         subprocess.run([GENERATOR_PATH, id, system, name, metadata], check=True)
     except subprocess.CalledProcessError:
         return f"Failed to generate prototype, id={id}", 500
-    
+
+    # print(metadata)
     retrieveUseSyntheticData = subprocess.run(
         ["python3", GET_GLOBALS_PATH, "get_synth", metadata],
         stdout=subprocess.PIPE,
@@ -126,6 +127,29 @@ def generate_prototype():
         print("Use synthetic data.")
     else:
         print("Do not use synthetic data.")
+    
+
+    # Get synthetic instructions
+    retrieveInstructions = subprocess.run(
+        ["python3", GET_GLOBALS_PATH, "get_instr", metadata],
+        stdout=subprocess.PIPE,
+        text=True
+    )
+    syntheticInstructions = retrieveInstructions.stdout.strip()
+
+    # Get synthetic counts
+    retrieveCounts = subprocess.run(
+        ["python3", GET_GLOBALS_PATH, "get_counts", metadata],
+        stdout=subprocess.PIPE,
+        text=True
+    )
+    import json
+    syntheticCounts = json.loads(retrieveCounts.stdout.strip())
+
+    print("Instructions:", syntheticInstructions)
+    print("Counts:", syntheticCounts)
+
+    subprocess.call(["python3", "/usr/src/prototypes/backend/schema_extract.py", name, system, syntheticInstructions, json.dumps(syntheticCounts)])   #added this for now to test the working of schema_extract.py
 
     # TODO: this database retrieval should be done using ids
     if 'database_prototype_name' in data:

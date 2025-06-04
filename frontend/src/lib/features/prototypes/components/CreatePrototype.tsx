@@ -50,11 +50,14 @@ export const CreatePrototype: React.FC = () => {
     const [useAuthentication, setUseAuthentication] = useState(true);
     const [useSyntheticData, setUseSyntheticData] = useState(false); // New state for Synthetic Data
     const [syntheticCounts, setSyntheticCounts] = useState<Record<string, number>>({}); // state to store synthetic data counts
+    const [globalSyntheticCount, setGlobalSyntheticCount] = useState<number | string>('');
     const [showSyntheticModal, setShowSyntheticModal] = useState(false); // modal state
     const [syntheticInstructions, setSyntheticInstructions] = useState<string>(''); // state to store custom instructions for synthetic data generation
     const [databaseHash, setDatabaseHash] = useState<string | null>(null);
     const [databasePrototypes, setDatabasePrototypes] = useState([]);
     const [selectedDatabasePrototype, setSelectedDatabasePrototype] = useState(null);
+    const [syntheticInstructionsPerNode, setSyntheticInstructionsPerNode] = useState<Record<string, string>>({});
+
 
     useEffect(() => {
         if (isSuccessInterfaces && interfaces) {
@@ -145,6 +148,7 @@ export const CreatePrototype: React.FC = () => {
             "useSyntheticData": useSyntheticData,
             "syntheticCounts": syntheticCounts,
             "syntheticInstructions": syntheticInstructions,
+            "syntheticInstructionsPerNode": syntheticInstructionsPerNode, // <-- new
         };
 
         const alphanumericRegex = /^[a-zA-Z0-9]+$/;
@@ -324,8 +328,8 @@ export const CreatePrototype: React.FC = () => {
                             <FormLabel>Name</FormLabel>
                             <Input name="name" placeholder="Prototype" required />
                             {error && (
-                                <Typography sx={{ margin: '2px' }}>
-                                    <h1 className="text-sm text-red-400">{error}</h1>
+                                <Typography sx={{ margin: '2px' }} className="text-sm text-red-400">
+                                    {error}
                                 </Typography>
                             )}
                         </FormControl>
@@ -413,15 +417,38 @@ export const CreatePrototype: React.FC = () => {
                         </Typography>
                     ) : (
                         <>
-                            {/*Custom instructions for synthetic data generation*/}
+                            {/*Global Custom instructions for synthetic data generation*/}
                             <FormControl className="mt-4">
-                                <FormLabel>Custom Instructions</FormLabel>
+                                <FormLabel>Global Custom Instructions</FormLabel>
                                 <Input
                                     placeholder="e.g., 10 samples per user with real names"
                                     value={syntheticInstructions}
                                     onChange={(e) => setSyntheticInstructions(e.target.value)}
                                 />
                             </FormControl>
+
+                            {/* Set count for all tables for synthetic data generation */}
+                            <FormControl className="mt-4">
+                                <FormLabel>Set amount for all tables</FormLabel>
+                                <Input
+                                    placeholder="Enter amount"
+                                    type="number"
+                                    value={globalSyntheticCount}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setGlobalSyntheticCount(val);
+
+                                        const parsed = parseInt(val, 10);
+                                        diagrams[0]?.nodes
+                                            ?.filter((node) => validClassNames.includes(node.cls_ptr))
+                                            .forEach((node) => {
+                                                const name = extractNodeNames(node);
+                                                updateValue(name, parsed);
+                                            });
+                                    }}
+                                />
+                            </FormControl>
+
 
                             <div className="max-h-[400px] overflow-y-auto pr-2 mt-2">
                                 <div className="mb-6 border p-4 rounded shadow">
@@ -433,21 +460,37 @@ export const CreatePrototype: React.FC = () => {
                                                     <div key={index} className="mb-4">
                                                         <h4 className="font-semibold mb-2">Node {index + 1}: {name}</h4>
                                                         {name && (
-                                                            <input
-                                                                type="number"
-                                                                min="0"
-                                                                value={syntheticCounts[name] || 0}
-                                                                onChange={(e) => {
-                                                                    const newValue = parseInt(e.target.value, 10);
-                                                                    if (!isNaN(newValue) && newValue >= 0) {
-                                                                        updateValue(name, newValue);
+                                                            <>
+                                                                <input
+                                                                    type="number"
+                                                                    min="0"
+                                                                    value={syntheticCounts[name] || 0}
+                                                                    onChange={(e) => {
+                                                                        const newValue = parseInt(e.target.value, 10);
+                                                                        if (!isNaN(newValue) && newValue >= 0) {
+                                                                            updateValue(name, newValue);
+                                                                        }
+                                                                    }}
+                                                                    className="border border-gray-300 rounded px-2 py-1 w-32 mt-1"
+                                                                    placeholder="Enter amount"
+                                                                />
+                                                                {/* Node-specific instruction input */}
+                                                                <input
+                                                                    type="text"
+                                                                    value={syntheticInstructionsPerNode[name] || ""}
+                                                                    onChange={(e) =>
+                                                                        setSyntheticInstructionsPerNode((prev) => ({
+                                                                            ...prev,
+                                                                            [name]: e.target.value,
+                                                                        }))
                                                                     }
-                                                                }}
-                                                                className="border border-gray-300 rounded px-2 py-1 w-32 mt-1"
-                                                                placeholder="Enter amount"
-                                                            />
+                                                                    className="border border-gray-300 rounded px-2 py-1 w-full mt-2"
+                                                                    placeholder={`Instruction for ${name} (optional)`}
+                                                                />
+                                                            </>
                                                         )}
                                                     </div>
+
                                                 );
                                             })
                                     }
