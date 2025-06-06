@@ -97,6 +97,23 @@ def make_synthetic_data_prompt(model_definitions, syntheticInstructions, synthet
         prompt += f"5) Apply the following global instructions for each model when applicable:\n{syntheticInstructions.strip()}\n"
 
     for model_def in model_definitions:
+
+        if not isinstance(model_def, dict):
+            raise ValueError("At least one model definition is not a dictionary")
+        if not isinstance(model_def.get("model_name"), str):
+            raise ValueError
+
+        fields = model_def.get("fields")
+
+        if not isinstance(fields, list):
+            raise ValueError
+        
+        required_keys = {'name', 'type', 'choices'}
+        for field in fields:
+            if field.keys() != required_keys:
+                raise ValueError
+        
+
         model_name = model_def["model_name"]
 
         num_records = syntheticCounts.get(model_name, 10)  #fallback to 10
