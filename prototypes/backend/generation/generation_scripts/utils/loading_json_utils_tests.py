@@ -311,8 +311,8 @@ class LoadingJsonUtilsUnitTests(unittest.TestCase):
             loading_json_utils.authentication_is_present("")
 
     def test_use_synthetic_data_is_present_true(self):
-        metadata = json.dumps({"useSyntheticData": True})
-        result = loading_json_utils.use_synthetic_data_is_present(metadata)
+        metadata_data = json.dumps({"useSyntheticData": True})
+        result = loading_json_utils.use_synthetic_data_is_present(metadata_data)
         self.assertTrue(result, "Expected synthetic data to be present, but got False")
 
     def test_use_synthetic_data_is_present_empty(self):
@@ -320,8 +320,8 @@ class LoadingJsonUtilsUnitTests(unittest.TestCase):
             loading_json_utils.use_synthetic_data_is_present("")
 
     def test_get_synthetic_instructions_present(self):
-        metadata = json.dumps({"syntheticInstructions": "Generate 5 cars"})
-        result = loading_json_utils.get_synthetic_instructions(metadata)
+        metadata_instr = json.dumps({"syntheticInstructions": "Generate 5 cars"})
+        result = loading_json_utils.get_synthetic_instructions(metadata_instr)
         self.assertEqual(result, "Generate 5 cars", f"Expected 'Generate 5 cars', got '{result}'")
 
     def test_get_synthetic_instructions_empty(self):
@@ -329,8 +329,8 @@ class LoadingJsonUtilsUnitTests(unittest.TestCase):
             loading_json_utils.get_synthetic_instructions("")
 
     def test_get_synthetic_counts_present(self):
-        metadata = json.dumps({"syntheticCounts": {"Car": 5}})
-        result = loading_json_utils.get_synthetic_counts(metadata)
+        metadata_counts = json.dumps({"syntheticCounts": {"Car": 5}})
+        result = loading_json_utils.get_synthetic_counts(metadata_counts)
         self.assertEqual(result, {"Car": 5}, f"Expected {{'Car': 5}}, got {result}")
 
     def test_get_synthetic_counts_empty(self):
