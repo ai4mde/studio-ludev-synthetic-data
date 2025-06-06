@@ -14,7 +14,7 @@ from graphlib import TopologicalSorter
 ##############################################
 
 def call_groq(prompt: str, model: str = 'llama-3.3-70b-versatile') -> str:
-    api_key = "key"    
+    api_key = ""    
     url = "https://api.groq.com/openai/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {api_key}",
@@ -98,10 +98,9 @@ def make_synthetic_data_prompt(model_definitions, syntheticInstructions, synthet
 
     for model_def in model_definitions:
         model_name = model_def["model_name"]
-        lower_model_name = model_name.lower()
 
-        num_records = syntheticCounts.get(lower_model_name, 10)  #fallback to 10
-        table_instruction = syntheticInstructionsPerNode.get(lower_model_name, "").strip() #fallback to empty
+        num_records = syntheticCounts.get(model_name, 10)  #fallback to 10
+        table_instruction = syntheticInstructionsPerNode.get(model_name, "").strip() #fallback to empty
         
         print(f"\nGenerating data for model: {model_name} ({num_records} records)")
         if table_instruction:
@@ -203,7 +202,7 @@ if __name__ == "__main__":
     syntheticInstructionsPerNode = json.loads(sys.argv[5]) if len(sys.argv) > 5 else {}
 
     #print("schema_extract.py global instruciton: " , syntheticInstructions)
-    #print("schema_extract.py count: " , syntheticCounts)
+    print("schema_extract.py count: " , syntheticCounts)
     print("schema_extract.py cusotm instruciton: ", syntheticInstructionsPerNode)
     main(PROTOTYPE_NAME, SYSTEM, syntheticInstructions, syntheticCounts, syntheticInstructionsPerNode)
 
