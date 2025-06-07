@@ -1,0 +1,144 @@
+// @ts-check
+import { beforeEach, describe, expect, test } from '@playwright/test';
+import config from '../config/testConfig';
+
+const login = async (page) => {
+    await page.goto('/');
+    await page.fill('input[name="username"]', 'admin');
+    await page.fill('input[name="password"]', 'sequoias');
+    await page.click('button[type="submit"]');
+    await page.waitForLoadState('networkidle');
+}
+
+const navigateToProject = async (page) => {
+    await page.goto('/projects/');
+    await page.waitForLoadState('networkidle');
+}
+
+const selectProject = async (page, projectName = config.projectName) => {
+    await page.getByRole('link', { name: projectName }).click();
+    await page.waitForLoadState('networkidle');
+}
+
+const selectSystem = async (page, systemName = config.systemName) => {
+    await page.getByRole('link', { name: systemName }).click();
+    await page.waitForLoadState('networkidle');
+}
+
+const navigateToPrototypes = async (page) => {
+    await page.getByRole('link', { name: 'Prototypes' }).click();
+    await page.waitForLoadState('networkidle');
+}
+
+describe('AI4MDE App Features (Prerequisites)', () => {
+    test('can fill and submit login form', async ({ page }) => {
+        await login(page);
+        await expect(page.getByRole('heading', { name: 'Welcome to AI4MDE Studio' })).toBeVisible();
+    })
+    test('can navigate to "Project"', async ({ page }) => {
+        await login(page);
+        await navigateToProject(page);
+        await expect(page.getByRole('heading', { name: /Projects/ })).toBeVisible();
+    });
+    test('can navigate to "System"', async ({ page }) => {
+        await login(page)
+        await navigateToProject(page)
+        await selectProject(page)
+        await expect(page.getByRole('heading', { name: /Systems/ })).toBeVisible();
+    });
+    test('can navigate to "Diagram"', async ({ page }) => {
+        await login(page);
+        await navigateToProject(page);
+        await selectProject(page);
+        await selectSystem(page);
+        await expect(page.getByRole('heading', { name: 'Class Diagram' })).toBeVisible();
+        await expect(page.getByRole('heading', { name: 'Activity Diagram' })).toBeVisible();
+        await expect(page.getByRole('heading', { name: 'Usecase Diagram' })).toBeVisible();
+        await expect(page.getByRole('heading', { name: 'Component Diagram' })).toBeVisible();
+    });
+    test('can navigate to "Prototypes"', async ({ page }) => {
+        await login(page);
+        await navigateToProject(page);
+        await selectProject(page);
+        await selectSystem(page);
+        await navigateToPrototypes(page);
+        await expect(page.getByRole('heading', { name: 'Prototypes' })).toBeVisible();
+        await expect(page.getByRole('button', { name: 'Generate new prototype'})).toBeVisible();
+    });
+});
+
+describe('AI4MDE App Features (Frontend UI)', () => {
+    beforeEach(async ({ page }) => {
+        await login(page);
+        await navigateToProject(page);
+        await selectProject(page);
+        await selectSystem(page);
+        await navigateToPrototypes(page);
+        await expect(page.getByRole('heading', { name: 'Prototypes' })).toBeVisible();
+        await expect(page.getByRole('button', { name: 'Generate new prototype'})).toBeVisible();
+    });
+
+    test('prototype generation modal appears', async ({ page }) => {
+        await page.getByRole('button', { name: 'Generate new prototype' }).click();
+        await expect(page.getByRole('dialog')).toBeVisible();
+        await expect(page.getByLabel('Name')).toBeVisible();
+        await expect(page.locator('input[placeholder="Prototype"]')).toBeVisible();
+        await expect(page.getByText('Use Synthetic Data')).toBeVisible(); 
+        await expect(page.getByRole('switch', { name: 'Use Synthetic Data' })).toBeVisible();
+        await expect(page.getByRole('button', { name: 'Create' })).toBeVisible();
+    });
+
+    test('synthetic data modal appears', async ({ page }) => {
+        await page.getByRole('button', { name: 'Generate new prototype' }).click();
+        await page.getByRole('switch', { name: 'Use Synthetic Data' }).click();
+        await expect(page.getByRole('dialog')).toBeVisible();
+        await expect(page.getByRole('heading', { name: 'Specify Synthetic Data Amount Per Node' })).toBeVisible();
+        await expect(page.getByLabel('Custom Instructions')).toBeVisible();
+        await expect(page.locator('input[placeholder="e.g., 10 samples per user with real names"]')).toBeVisible();
+        await expect(page.getByRole('button', { name: 'Done' })).toBeVisible();
+    })
+})
+
+describe('AI4MDE App Features (Generation)', () => {
+    beforeEach(async ({ page }) => {
+        await login(page);
+        await navigateToProject(page);
+        await selectProject(page);
+        await selectSystem(page);
+        await navigateToPrototypes(page);
+        const trashButtonCount = await page.locator('button:has(.lucide-trash)').count();
+        if (trashButtonCount > 0) {
+            await page.getByRole('button', { name: 'Delete all' }).click();
+            await page.getByRole('button', { name: 'Confirm' }).click();
+            await expect(page.locator('button:has(.lucide-trash)')).toHaveCount(0);
+        }
+        await page.getByRole('button', { name: 'Generate new prototype' }).click();
+        await expect(page.getByRole('dialog')).toBeVisible();
+        await expect(page.locator('input[placeholder="Prototype"]')).toBeVisible();
+    });
+
+    test('can generate and visit prototype without custom instructions', async ({ page }) => {
+        await page.fill('input[placeholder="Prototype"]', config.prototypeName)
+        await page.getByRole('switch', { name: 'Use Authentication' }).click();
+        await page.getByRole('switch', { name: 'Use Synthetic Data' }).click();
+        await page.getByRole('button', { name: 'Done' }).click();
+        await page.getByRole('button', { name: 'Create' }).click();
+        await expect(page.getByText('Generating')).toBeVisible();
+        await expect(page.locator('.animate-spin')).toBeVisible();
+        await expect(page.getByText('Generating')).not.toBeVisible({ timeout: 60000 }); // 1 minute
+        await page.reload();
+        await page.waitForLoadState('networkidle');
+        await expect(page.getByText(config.prototypeName)).toBeVisible();
+        await page.getByRole('button', { name: 'Run' }).click();
+        await expect(page.getByRole('button', { name: 'Run' })).toBeDisabled();
+        await expect(page.getByText('http://prototype.ai4mde.localhost')).toBeVisible({ timeout: 60000 });
+        await page.goto('http://prototype.ai4mde.localhost');
+        await page.waitForLoadState('networkidle');
+        await expect(page.getByRole('heading', { name: config.prototypeName + ' prototype' })).toBeVisible();
+        await expect(page.getByRole('link', { name: config.interfaceName })).toBeVisible();
+        await page.getByRole('link', { name: config.interfaceName }).click();
+        await page.waitForLoadState('networkidle');
+        await expect(page).toHaveTitle(config.interfaceName);
+        await expect(page.getByRole('heading', { name: 'Welcome!' })).toBeVisible();
+    })
+})
