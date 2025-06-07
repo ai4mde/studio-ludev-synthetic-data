@@ -1,49 +1,42 @@
 import os
 import sys
-import re
 import json
 import django
 from django.apps import apps
 from django.db.models import ForeignKey, OneToOneField
-import requests
+from groq import Groq
 from graphlib import TopologicalSorter
-##############################################
-
-# PLEASE PUT YOUR GROQ API KEY IN THE call_groq FUNCTION BELOW
-
-##############################################
 
 
-def call_groq(prompt: str, model: str = 'llama-3.3-70b-versatile') -> str:
-    api_key = ""
-    url = "https://api.groq.com/openai/v1/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json",
-    }
-    payload = {
-        "model": model,
-        "messages": [
-            {"role": "user", "content": prompt}
-        ],
-        "temperature": 0.7,
-    }
-
+def call_groq(prompt: str, model: str = "llama-3.3-70b-versatile") -> str:
+    client = Groq(
+        api_key=os.environ.get("GROQ_API_KEY"),
+    )
     try:
-        response = requests.post(url, headers=headers, json=payload)
-        response.raise_for_status()
-        return response.json()["choices"][0]["message"]["content"]
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt,
+                }
+            ],
+            model=model,
+        )
+        response = chat_completion.choices[0].message.content
+        if response is not None:
+            return response
+        else:
+            raise Exception("LLM returned None")
     except Exception as e:
-        raise Exception("Failed to call Groq LLM: " + str(e))
+        raise Exception("Failed to call LLM, error " + str(e))
 
 
-def setup_django(PROTOTYPE_NAME, SYSTEM):
-    print("my name is:", PROTOTYPE_NAME)
-    print("part of system:", SYSTEM)
-
-    PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'generated_prototypes', SYSTEM, PROTOTYPE_NAME))
+def setup_django(system_name, prototype_name):
+    PROJECT_ROOT = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "../../..", "generated_prototypes", system_name, prototype_name)
+    )
     sys.path.append(PROJECT_ROOT)
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", f"{PROTOTYPE_NAME}.settings")
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", f"{prototype_name}.settings")
     django.setup()
 
 
@@ -56,7 +49,7 @@ def extract_model_definitions(models, hidden_models):
                 field_info = {
                     "name": field.name,
                     "type": field.__class__.__name__,
-                    "choices": field.choices if hasattr(field, 'choices') and field.choices else None
+                    "choices": field.choices if hasattr(field, "choices") and field.choices else None
                 }
                 fields_info.append(field_info)
             model_def = {
@@ -67,92 +60,63 @@ def extract_model_definitions(models, hidden_models):
     return model_definitions
 
 
-# Returns a list of models topologically sorted based on key constraints
-# The model that has no dependencies will appear first in the list
 def toposort_models(models, hidden_models):
     ts = TopologicalSorter()
-
     for model in models:
         if model.__name__ in hidden_models:
             continue
-
         key_constraints = []
-
         for field in model._meta.fields:
             if isinstance(field, ForeignKey) or isinstance(field, OneToOneField):
                 key_constraints.append(field.name)
-
         ts.add(model.__name__, *key_constraints)
-
     return [*ts.static_order()]
 
 
-def make_synthetic_data_prompt(model_definitions, syntheticInstructions, syntheticCounts, syntheticInstructionsPerNode):
+def make_prompt(model_definitions, synthetic_instructions, synthetic_counts, synthetic_instructions_per_node):
     prompt = f"""
-
     You are going to generate synthetic sample data for a database based on Django model definitions.
     1) Make sure values match the expected type for each field. 
     2) Make sure that the data are plausible real world values.
     3) You are going to return one json object, within this json object each model name is associated with an array of instances.
     4) Return only one unified json object made from the model arrays please, NO OTHER TEXT THAN JSON.
     """
-    if syntheticInstructions.strip():
-        prompt += f"5) Apply the following global instructions for each model when applicable:\n{syntheticInstructions.strip()}\n"
+    if synthetic_instructions.strip():
+        prompt += f"5) Apply the following global instructions for each model when applicable: {synthetic_instructions.strip()}\n"
 
     for model_def in model_definitions:
-
         if not isinstance(model_def, dict):
             raise ValueError("At least one model definition is not a dictionary")
         if not isinstance(model_def.get("model_name"), str):
             raise ValueError
-
         fields = model_def.get("fields")
-
         if not isinstance(fields, list):
             raise ValueError
-
-        required_keys = {'name', 'type', 'choices'}
+        required_keys = {"name", "type", "choices"}
         for field in fields:
             if field.keys() != required_keys:
                 raise ValueError
 
         model_name = model_def["model_name"]
-
-        num_records = syntheticCounts.get(model_name, 10)  # fallback to 10
-        table_instruction = syntheticInstructionsPerNode.get(model_name, "").strip()  # fallback to empty
-
-        print(f"\nGenerating data for model: {model_name} ({num_records} records)")
-        if table_instruction:
-            print(f"Using custom instruction: {table_instruction}")
-
+        per_node_instructions = synthetic_instructions_per_node.get(model_name, "").strip()
+        if per_node_instructions:
+            print(f"Using custom instruction: {per_node_instructions}")
         single_model_def = {
             "model_name": model_def["model_name"],
             "fields": model_def["fields"],
         }
         formatted_model_def = json.dumps(single_model_def, indent=2)
 
+        num_records = synthetic_counts.get(model_name, 10)
         prompt += f"\nGenerate {num_records} synthetic records based on the following model definition:\n{formatted_model_def}\n"
+        if per_node_instructions:
+            prompt += f"With these additional instructions for model {model_name}: {per_node_instructions}\n"
 
-        if table_instruction:
-            prompt += f"With these additional instructions for model {model_name}: {table_instruction}\n"
-
-    print("prompt to llm: ", prompt)
     return prompt
 
 
-def extract_json_from_response(llm_response):
-    json_start = llm_response.find('{')
-    json_end = llm_response.rfind('}') + 1
-    json_string = llm_response[json_start:json_end]
-    return json.loads(json_string)
-
-
 def save_records(model_class, synthetic_data, model_name, name_to_id_to_id_mapping_mapping):
-
-    # This is a dictionary that keeps track of which "id" that the LLM generated
-    # maps to which actual primarykey (autofield)
-    llm_id_to_auto_id = {}
-
+    llm_id_to_auto_id = {}  # Dictionary that keeps track of which "id" that the LLM generated maps to which actual primarykey (autofield)
     for record in synthetic_data:
         instance = model_class()
         for field_name, field_value in record.items():
@@ -174,57 +138,47 @@ def save_records(model_class, synthetic_data, model_name, name_to_id_to_id_mappi
             llm_id_to_auto_id[f'{record["id"]}'] = instance.id
         except Exception as e:
             print(f"Failed to save record for {model_name}: {e}")
-
     return llm_id_to_auto_id
 
 
-def main(PROTOTYPE_NAME, SYSTEM, syntheticInstructions, syntheticCounts, syntheticInstructionsPerNode):
-    setup_django(PROTOTYPE_NAME, SYSTEM)
+def main():
+    prototype_name = sys.argv[1]
+    system_name = sys.argv[2]
+    synthetic_instructions = sys.argv[3] if len(sys.argv) > 3 else ""
+    synthetic_counts = json.loads(sys.argv[4]) if len(sys.argv) > 4 else {}
+    synthetic_instructions_per_node = json.loads(sys.argv[5]) if len(sys.argv) > 5 else {}
 
+    setup_django(system_name, prototype_name)
     hidden_models = ["LogEntry", "Permission", "Group", "User", "ContentType", "Session"]
     models = apps.get_models()
     model_definitions = extract_model_definitions(models, hidden_models)
-
     insert_order = toposort_models(models, hidden_models)
+    prompt = make_prompt(
+        model_definitions, synthetic_instructions, synthetic_counts, synthetic_instructions_per_node
+    )
 
-    SYN_DATA_PROMPT = make_synthetic_data_prompt(model_definitions, syntheticInstructions, syntheticCounts, syntheticInstructionsPerNode)
-    # print(SYN_DATA_PROMPT)
-
-    total_json = None
-
+    generated_data = None
     try:
-        llm_response = call_groq(SYN_DATA_PROMPT)
-        print(llm_response)
+        llm_response = call_groq(prompt)
         try:
-            total_json = extract_json_from_response(llm_response)
+            generated_data = json.loads(llm_response[llm_response.find('{'):llm_response.rfind('}')+1])
         except json.JSONDecodeError as e:
             print(f"Failed to parse JSON from LLM response: {e}")
             print(f"Raw response: {llm_response}")
     except Exception as e:
         print(f"Error generating synthetic data: {e}")
 
-    if total_json is None:
+    if generated_data is None:
         return
 
     name_to_id_to_id_mapping_mapping = {}
-
     for model_name in insert_order:
         model_class = next((m for m in models if m.__name__ == model_name), None)
         if not model_class:
             continue
-
-        id_to_id_mapping = save_records(model_class, total_json[model_name], model_name, name_to_id_to_id_mapping_mapping)
+        id_to_id_mapping = save_records(model_class, generated_data[model_name], model_name, name_to_id_to_id_mapping_mapping)
         name_to_id_to_id_mapping_mapping[model_name] = id_to_id_mapping
 
 
 if __name__ == "__main__":
-    prototypeName = sys.argv[1]
-    systemName = sys.argv[2]
-    syntheticInstructions = sys.argv[3] if len(sys.argv) > 3 else ""
-    syntheticCounts = json.loads(sys.argv[4]) if len(sys.argv) > 4 else {}
-    syntheticInstructionsPerNode = json.loads(sys.argv[5]) if len(sys.argv) > 5 else {}
-
-    # print("schema_extract.py global instruciton: " , syntheticInstructions)
-    print("schema_extract.py count: ", syntheticCounts)
-    print("schema_extract.py cusotm instruciton: ", syntheticInstructionsPerNode)
-    main(prototypeName, systemName, syntheticInstructions, syntheticCounts, syntheticInstructionsPerNode)
+    main()

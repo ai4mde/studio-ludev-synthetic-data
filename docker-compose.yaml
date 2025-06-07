@@ -49,7 +49,9 @@ services:
     depends_on: ["postgres"]
     build:
       context: prototypes
-    env_file: config/prototypes.env
+    env_file: 
+      - config/prototypes.env
+      - config/prototypes_keys.env
     networks:
       - ai4mde_traefik
     volumes:

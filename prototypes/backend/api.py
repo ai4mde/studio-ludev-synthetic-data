@@ -122,9 +122,9 @@ def generate_prototype():
         return f"Failed to generate prototype, id={id}", 500
 
     useSyntheticData = metadata_json.get('useSyntheticData', False)
-    syntheticCounts = metadata_json.get('syntheticCounts')
-    syntheticInstructions = metadata_json.get('syntheticInstructions')
-    syntheticInstructionsPerNode = metadata_json.get('syntheticInstructionsPerNode')
+    syntheticCounts = metadata_json.get('syntheticCounts', 10)
+    syntheticInstructions = metadata_json.get('syntheticInstructions', {})
+    syntheticInstructionsPerNode = metadata_json.get('syntheticInstructionsPerNode', {})
 
     print("api.py use synthetic data:", useSyntheticData)
     print("api.py global instructions:", syntheticInstructions)
@@ -132,17 +132,18 @@ def generate_prototype():
     print("api.py instructions per node:", syntheticInstructionsPerNode)
 
     if useSyntheticData:
-        subprocess.call([
-            "python3",
-            "/usr/src/prototypes/backend/schema_extract.py",
-            name,
-            system,
-            syntheticInstructions,
-            json.dumps(syntheticCounts),
-            json.dumps(syntheticInstructionsPerNode),
-        ])
-    else:
-        print("Do not use synthetic data.")
+        try:
+            subprocess.call([
+                "python3",
+                SYNTHETIC_DATA_GENERATOR_PATH,
+                name,
+                system,
+                syntheticInstructions,
+                json.dumps(syntheticCounts),
+                json.dumps(syntheticInstructionsPerNode),
+            ])
+        except:
+            return f"Failed to generate and populate synthetic data", 500
 
     # TODO: this database retrieval should be done using ids
     if 'database_prototype_name' in data:
