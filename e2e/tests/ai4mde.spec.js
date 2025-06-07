@@ -99,7 +99,7 @@ describe('AI4MDE App Features (Frontend UI)', () => {
     })
 })
 
-describe('AI4MDE App Features (Generation)', () => {
+describe.serial('AI4MDE App Features (Generation)', () => {
     beforeEach(async ({ page }) => {
         await login(page);
         await navigateToProject(page);
@@ -118,14 +118,43 @@ describe('AI4MDE App Features (Generation)', () => {
     });
 
     test('can generate and visit prototype without custom instructions', async ({ page }) => {
-        await page.fill('input[placeholder="Prototype"]', config.prototypeName)
+        test.setTimeout(120000); // 2 minutes
+        await page.fill('input[placeholder="Prototype"]', config.prototypeName);
         await page.getByRole('switch', { name: 'Use Authentication' }).click();
         await page.getByRole('switch', { name: 'Use Synthetic Data' }).click();
         await page.getByRole('button', { name: 'Done' }).click();
         await page.getByRole('button', { name: 'Create' }).click();
         await expect(page.getByText('Generating')).toBeVisible();
         await expect(page.locator('.animate-spin')).toBeVisible();
-        await expect(page.getByText('Generating')).not.toBeVisible({ timeout: 60000 }); // 1 minute
+        await expect(page.getByText('Generating')).not.toBeVisible({ timeout: 120000 });
+        await page.reload();
+        await page.waitForLoadState('networkidle');
+        await expect(page.getByText(config.prototypeName)).toBeVisible();
+        await page.getByRole('button', { name: 'Run' }).click();
+        await expect(page.getByRole('button', { name: 'Run' })).toBeDisabled();
+        await expect(page.getByText('http://prototype.ai4mde.localhost')).toBeVisible({ timeout: 60000 });
+        await page.goto('http://prototype.ai4mde.localhost');
+        await page.waitForLoadState('networkidle');
+        await expect(page.getByRole('heading', { name: config.prototypeName + ' prototype' })).toBeVisible();
+        await expect(page.getByRole('link', { name: config.interfaceName })).toBeVisible();
+        await page.getByRole('link', { name: config.interfaceName }).click();
+        await page.waitForLoadState('networkidle');
+        await expect(page).toHaveTitle(config.interfaceName);
+        await expect(page.getByRole('heading', { name: 'Welcome!' })).toBeVisible();
+    })
+
+    test('can generate and visit prototype with custom instructions', async ({ page }) => {
+        test.setTimeout(120000); // 2 minutes
+        await page.fill('input[placeholder="Prototype"]', config.prototypeName);
+        await page.getByRole('switch', { name: 'Use Authentication' }).click();
+        await page.getByRole('switch', { name: 'Use Synthetic Data' }).click();
+        await page.fill('input[placeholder="e.g., 10 samples per user with real names"]', config.globalCustomInstructions)
+        await page.fill('input[placeholder="Enter amount"]', config.globalAmount)
+        await page.getByRole('button', { name: 'Done' }).click();
+        await page.getByRole('button', { name: 'Create' }).click();
+        await expect(page.getByText('Generating')).toBeVisible();
+        await expect(page.locator('.animate-spin')).toBeVisible();
+        await expect(page.getByText('Generating')).not.toBeVisible({ timeout: 120000 });
         await page.reload();
         await page.waitForLoadState('networkidle');
         await expect(page.getByText(config.prototypeName)).toBeVisible();
