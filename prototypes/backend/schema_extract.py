@@ -13,8 +13,9 @@ from graphlib import TopologicalSorter
 
 ##############################################
 
+
 def call_groq(prompt: str, model: str = 'llama-3.3-70b-versatile') -> str:
-    api_key = ""    
+    api_key = ""
     url = "https://api.groq.com/openai/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {api_key}",
@@ -35,6 +36,7 @@ def call_groq(prompt: str, model: str = 'llama-3.3-70b-versatile') -> str:
     except Exception as e:
         raise Exception("Failed to call Groq LLM: " + str(e))
 
+
 def setup_django(PROTOTYPE_NAME, SYSTEM):
     print("my name is:", PROTOTYPE_NAME)
     print("part of system:", SYSTEM)
@@ -43,6 +45,7 @@ def setup_django(PROTOTYPE_NAME, SYSTEM):
     sys.path.append(PROJECT_ROOT)
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", f"{PROTOTYPE_NAME}.settings")
     django.setup()
+
 
 def extract_model_definitions(models, hidden_models):
     model_definitions = []
@@ -64,24 +67,24 @@ def extract_model_definitions(models, hidden_models):
     return model_definitions
 
 
-#Returns a list of models topologically sorted based on key constraints
-#The model that has no dependencies will appear first in the list
+# Returns a list of models topologically sorted based on key constraints
+# The model that has no dependencies will appear first in the list
 def toposort_models(models, hidden_models):
     ts = TopologicalSorter()
-    
+
     for model in models:
         if model.__name__ in hidden_models:
             continue
 
         key_constraints = []
-        
+
         for field in model._meta.fields:
             if isinstance(field, ForeignKey) or isinstance(field, OneToOneField):
                 key_constraints.append(field.name)
-        
+
         ts.add(model.__name__, *key_constraints)
-    
-    return [*ts.static_order()] 
+
+    return [*ts.static_order()]
 
 
 def make_synthetic_data_prompt(model_definitions, syntheticInstructions, syntheticCounts, syntheticInstructionsPerNode):
@@ -107,18 +110,17 @@ def make_synthetic_data_prompt(model_definitions, syntheticInstructions, synthet
 
         if not isinstance(fields, list):
             raise ValueError
-        
+
         required_keys = {'name', 'type', 'choices'}
         for field in fields:
             if field.keys() != required_keys:
                 raise ValueError
-        
 
         model_name = model_def["model_name"]
 
-        num_records = syntheticCounts.get(model_name, 10)  #fallback to 10
-        table_instruction = syntheticInstructionsPerNode.get(model_name, "").strip() #fallback to empty
-        
+        num_records = syntheticCounts.get(model_name, 10)  # fallback to 10
+        table_instruction = syntheticInstructionsPerNode.get(model_name, "").strip()  # fallback to empty
+
         print(f"\nGenerating data for model: {model_name} ({num_records} records)")
         if table_instruction:
             print(f"Using custom instruction: {table_instruction}")
@@ -133,9 +135,10 @@ def make_synthetic_data_prompt(model_definitions, syntheticInstructions, synthet
 
         if table_instruction:
             prompt += f"With these additional instructions for model {model_name}: {table_instruction}\n"
-    
-    print("prompt to llm: " , prompt)
+
+    print("prompt to llm: ", prompt)
     return prompt
+
 
 def extract_json_from_response(llm_response):
     json_start = llm_response.find('{')
@@ -143,10 +146,11 @@ def extract_json_from_response(llm_response):
     json_string = llm_response[json_start:json_end]
     return json.loads(json_string)
 
+
 def save_records(model_class, synthetic_data, model_name, name_to_id_to_id_mapping_mapping):
 
-    #This is a dictionary that keeps track of which "id" that the LLM generated
-    #maps to which actual primarykey (autofield)
+    # This is a dictionary that keeps track of which "id" that the LLM generated
+    # maps to which actual primarykey (autofield)
     llm_id_to_auto_id = {}
 
     for record in synthetic_data:
@@ -170,8 +174,9 @@ def save_records(model_class, synthetic_data, model_name, name_to_id_to_id_mappi
             llm_id_to_auto_id[f'{record["id"]}'] = instance.id
         except Exception as e:
             print(f"Failed to save record for {model_name}: {e}")
-    
+
     return llm_id_to_auto_id
+
 
 def main(PROTOTYPE_NAME, SYSTEM, syntheticInstructions, syntheticCounts, syntheticInstructionsPerNode):
     setup_django(PROTOTYPE_NAME, SYSTEM)
@@ -180,26 +185,26 @@ def main(PROTOTYPE_NAME, SYSTEM, syntheticInstructions, syntheticCounts, synthet
     models = apps.get_models()
     model_definitions = extract_model_definitions(models, hidden_models)
 
-    insert_order = toposort_models(models,hidden_models)
+    insert_order = toposort_models(models, hidden_models)
 
     SYN_DATA_PROMPT = make_synthetic_data_prompt(model_definitions, syntheticInstructions, syntheticCounts, syntheticInstructionsPerNode)
     # print(SYN_DATA_PROMPT)
-    
+
     total_json = None
 
     try:
         llm_response = call_groq(SYN_DATA_PROMPT)
         print(llm_response)
-        try: 
+        try:
             total_json = extract_json_from_response(llm_response)
         except json.JSONDecodeError as e:
-                    print(f"Failed to parse JSON from LLM response: {e}")
-                    print(f"Raw response: {llm_response}")
+            print(f"Failed to parse JSON from LLM response: {e}")
+            print(f"Raw response: {llm_response}")
     except Exception as e:
-            print(f"Error generating synthetic data: {e}")
+        print(f"Error generating synthetic data: {e}")
 
     if total_json is None:
-        return 
+        return
 
     name_to_id_to_id_mapping_mapping = {}
 
@@ -211,17 +216,15 @@ def main(PROTOTYPE_NAME, SYSTEM, syntheticInstructions, syntheticCounts, synthet
         id_to_id_mapping = save_records(model_class, total_json[model_name], model_name, name_to_id_to_id_mapping_mapping)
         name_to_id_to_id_mapping_mapping[model_name] = id_to_id_mapping
 
+
 if __name__ == "__main__":
-    PROTOTYPE_NAME = sys.argv[1]
-    SYSTEM = sys.argv[2]
+    prototypeName = sys.argv[1]
+    systemName = sys.argv[2]
     syntheticInstructions = sys.argv[3] if len(sys.argv) > 3 else ""
     syntheticCounts = json.loads(sys.argv[4]) if len(sys.argv) > 4 else {}
     syntheticInstructionsPerNode = json.loads(sys.argv[5]) if len(sys.argv) > 5 else {}
 
-    #print("schema_extract.py global instruciton: " , syntheticInstructions)
-    print("schema_extract.py count: " , syntheticCounts)
+    # print("schema_extract.py global instruciton: " , syntheticInstructions)
+    print("schema_extract.py count: ", syntheticCounts)
     print("schema_extract.py cusotm instruciton: ", syntheticInstructionsPerNode)
-    main(PROTOTYPE_NAME, SYSTEM, syntheticInstructions, syntheticCounts, syntheticInstructionsPerNode)
-
-
-
+    main(prototypeName, systemName, syntheticInstructions, syntheticCounts, syntheticInstructionsPerNode)

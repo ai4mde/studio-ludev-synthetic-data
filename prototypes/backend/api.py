@@ -61,6 +61,8 @@ def start_prototype(prototype_id: str, prototype_name: str, prototype_system: st
 def run_prototype():
     stop_prototype()
     data = request.json
+    if data is None:
+        return "Missing JSON data in request body", 400
     id = data.get('id')
     name = data.get('name')
     system = data.get('system')
@@ -103,59 +105,42 @@ def get_active_prototype():
 def generate_prototype():
     GENERATOR_PATH = "/usr/src/prototypes/backend/generation/generator.sh"  # TODO: put in env
     COPY_DATABASE_PATH = "/usr/src/prototypes/backend/generation/copy_database.sh"
-    GET_GLOBALS_PATH = "/usr/src/prototypes/backend/generation/generation_scripts/get_globals.py"
+    SYNTHETIC_DATA_GENERATOR_PATH = "/usr/src/prototypes/backend/generation/generation_scripts/generate_synthetic_data.py"
 
     data = request.json
+    if data is None:
+        return "Missing JSON data in request body", 400
     id = data.get('id')
     name = data.get('name')
     system = data.get('system')
     metadata = data.get('metadata')
+    metadata_json = json.loads(metadata)
+
     try:
         subprocess.run([GENERATOR_PATH, id, system, name, metadata], check=True)
     except subprocess.CalledProcessError:
         return f"Failed to generate prototype, id={id}", 500
 
-    #print(metadata)
+    useSyntheticData = metadata_json.get('useSyntheticData', False)
+    syntheticCounts = metadata_json.get('syntheticCounts')
+    syntheticInstructions = metadata_json.get('syntheticInstructions')
+    syntheticInstructionsPerNode = metadata_json.get('syntheticInstructionsPerNode')
 
-    #get the choice of using of synthetic data
-    retrieveUseSyntheticData = subprocess.run(
-        ["python3", GET_GLOBALS_PATH, "get_synth", metadata],
-        stdout=subprocess.PIPE,
-        text=True
-    )
-    useSyntheticData = retrieveUseSyntheticData.stdout.strip() == "True"
-    
-    # Get synthetic instructions
-    retrieveInstructions = subprocess.run(
-        ["python3", GET_GLOBALS_PATH, "get_instr", metadata],
-        stdout=subprocess.PIPE,
-        text=True
-    )
-    syntheticInstructions = retrieveInstructions.stdout.strip()
-
-    # Get synthetic counts
-    retrieveCounts = subprocess.run(
-        ["python3", GET_GLOBALS_PATH, "get_counts", metadata],
-        stdout=subprocess.PIPE,
-        text=True
-    )
-    syntheticCounts = json.loads(retrieveCounts.stdout.strip())
-
-    # Get custom instruction per node/table
-    retrieveInstructionsPerNode = subprocess.run(
-        ["python3", GET_GLOBALS_PATH, "get_instr_per_node", metadata],
-        stdout=subprocess.PIPE,
-        text=True
-    )
-    syntheticInstructionsPerNode = json.loads(retrieveInstructionsPerNode.stdout.strip())
-
+    print("api.py use synthetic data:", useSyntheticData)
     print("api.py global instructions:", syntheticInstructions)
     print("api.py counts:", syntheticCounts)
     print("api.py instructions per node:", syntheticInstructionsPerNode)
 
     if useSyntheticData:
-        print("Use synthetic data.")
-        subprocess.call(["python3", "/usr/src/prototypes/backend/schema_extract.py", name, system, syntheticInstructions, json.dumps(syntheticCounts), json.dumps(syntheticInstructionsPerNode)])   #added this for now to test the working of schema_extract.py
+        subprocess.call([
+            "python3",
+            "/usr/src/prototypes/backend/schema_extract.py",
+            name,
+            system,
+            syntheticInstructions,
+            json.dumps(syntheticCounts),
+            json.dumps(syntheticInstructionsPerNode),
+        ])
     else:
         print("Do not use synthetic data.")
 
@@ -173,6 +158,8 @@ def generate_prototype():
 def remove_prototype():
     REMOVER_PATH = "/usr/src/prototypes/backend/generation/remover.sh"  # TODO: put in env
     data = request.json
+    if data is None:
+        return "Missing JSON data in request body", 400
     id = data.get('id')
     name = data.get('name')
     system = data.get('system')
@@ -186,4 +173,4 @@ def remove_prototype():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=os.environ.get('PORT', 8010), debug=True)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8010)), debug=True)
