@@ -116,6 +116,8 @@ def make_prompt(model_definitions, synthetic_instructions, synthetic_counts, syn
 
 
 def save_records(model_class, synthetic_data, model_name, name_to_id_to_id_mapping_mapping):
+    print(model_class)
+    print(model_class.__name__)
     llm_id_to_auto_id = {}  # Dictionary that keeps track of which "id" that the LLM generated maps to which actual primarykey (autofield)
     for record in synthetic_data:
         instance = model_class()

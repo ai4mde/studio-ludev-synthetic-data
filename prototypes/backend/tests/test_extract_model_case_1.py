@@ -1,20 +1,30 @@
-from schema_extract import setup_django
-from schema_extract import extract_model_definitions
 import sys
+import os
 import django
 from django.apps import apps
 from django.db.models import ForeignKey, OneToOneField
+
+GENERATION_PATH = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "..", "generation", "generation_scripts")
+    )
+
+sys.path.append(GENERATION_PATH)
+
+from generate_synthetic_data import setup_django
+from generate_synthetic_data import extract_model_definitions
 
 PROTOTYPE_NAME = sys.argv[1]
 SYSTEM = sys.argv[2]
 
 # print("Prototypename: ",PROTOTYPE_NAME)
 
-setup_django(PROTOTYPE_NAME, SYSTEM)
+setup_django(SYSTEM, PROTOTYPE_NAME)
 
 hidden_models = ["LogEntry", "Permission", "Group", "User", "ContentType", "Session"]
 
 model_definition = extract_model_definitions(apps.get_models(), hidden_models)
+
+print(model_definition)
 
 if len(model_definition) != 3:
     exit(1)
