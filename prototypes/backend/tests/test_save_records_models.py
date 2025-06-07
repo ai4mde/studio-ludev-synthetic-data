@@ -5,44 +5,18 @@ import json
 from django.apps import apps
 from django.db import transaction
 from django.db.models import ForeignKey, OneToOneField
-from schema_extract import setup_django, save_records, \
-    extract_model_definitions, toposort_models, extract_json_from_response
-from django.core.management import call_command
+GENERATION_PATH = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "..", "generation", "generation_scripts")
+    )
 
-def save_records_test(model_class, synthetic_data, model_name, name_to_id_to_id_mapping_mapping):
+sys.path.append(GENERATION_PATH)
 
-    #This is a dictionary that keeps track of which "id" that the LLM generated
-    #maps to which actual primarykey (autofield)
-    llm_id_to_auto_id = {}
-
-    for record in synthetic_data:
-        instance = model_class()
-        for field_name, field_value in record.items():
-            if field_name == "id" or field_name is None:
-                continue
-            try:
-                field = model_class._meta.get_field(field_name)
-                if isinstance(field, (ForeignKey, OneToOneField)):
-                    related_model = field.remote_field.model
-                    related_instance = related_model.objects.get(id=name_to_id_to_id_mapping_mapping[field_name][str(field_value)])
-                    setattr(instance, field_name, related_instance)
-                else:
-                    setattr(instance, field_name, field_value)
-            except Exception as e:
-                print(f"Failed to set field {field_name} with value {field_value}: {e}")
-        try:
-            instance.save()
-            print(f"Saved record for {model_name}")
-            llm_id_to_auto_id[f'{record["id"]}'] = instance.id
-        except Exception as e:
-            print(f"Failed to save record for {model_name}: {e}")
-    
-    return llm_id_to_auto_id
+from generate_synthetic_data import setup_django, save_records, extract_model_definitions, toposort_models
 
 PROTOTYPE_NAME = sys.argv[1]
 SYSTEM = sys.argv[2]
 
-setup_django(PROTOTYPE_NAME, SYSTEM)
+setup_django(SYSTEM, PROTOTYPE_NAME)
 
 hidden_models = ["LogEntry", "Permission", "Group", "User", "ContentType", "Session"]
 models = apps.get_models()
@@ -84,24 +58,26 @@ llm_response = """
 }
 """
 
-total_json = extract_json_from_response(llm_response)
+total_json = json.loads(llm_response[llm_response.find('{'):llm_response.rfind('}')+1])
 print(f"Extracted JSON: {json.dumps(total_json, indent=2)}")
 
 name_to_id_to_id_mapping_mapping = {}
 
+print(insert_order)
 for model_name in insert_order:
     model_class = next((m for m in models if m.__name__ == model_name), None)
     print(f"Processing model: {model_name}")
     if not model_class:
         continue
+  
     
-    id_to_id_mapping = save_records_test(model_class, total_json[model_name], model_name, name_to_id_to_id_mapping_mapping)
+    id_to_id_mapping = save_records(model_class, total_json[model_name], model_name, name_to_id_to_id_mapping_mapping)
     print(f"ID to ID mapping for {model_name}: {id_to_id_mapping}")
     # This one should exit with 0
 
-    # Need tests for non-0 exits
+    # # Need tests for non-0 exits
 
-    # The 2 lines below could technically be removed, as they're not explicitly tested
+    # # The 2 lines below could technically be removed, as they're not explicitly tested
     name_to_id_to_id_mapping_mapping[model_name] = id_to_id_mapping
     print(f"Name to ID mapping for {model_name}: {name_to_id_to_id_mapping_mapping[model_name]}")
 
