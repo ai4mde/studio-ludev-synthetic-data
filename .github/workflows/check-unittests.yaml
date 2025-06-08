@@ -181,6 +181,10 @@ jobs:
         working-directory: e2e
         run: npm test
 
+      - name: Install Playwright browsers
+        working-directory: e2e
+        run: npx playwright install --with-deps
+
       - name: Generate Playwright test report
         working-directory: e2e
         run: npm run test:report
