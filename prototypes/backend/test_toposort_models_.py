@@ -80,7 +80,7 @@ model_names_sorted_empty = toposort_models(apps.get_models(), hidden_models)
 """Check that sorted list is empty."""
 if model_names_sorted_empty != []:
     print("Expected no models, got:", model_names_sorted_empty)
-    exit(8)
+    exit(1)
 ##########################################################################################
 ##########################################################################################
 # ONE MODEL METADATA TEST
@@ -88,7 +88,7 @@ ONE_MODEL_METADATA = {
     "diagrams": [
         {
             "project": "someUUID",  # TODO: Replace with actual project UUID
-            "id": "someUUID", # TODO: Replace with actual UUID generation
+            "id": "someOtherUUID", # TODO: Replace with actual UUID generation
             "name": "SingleModelDiagram",
             "description": "",
             "type": "classes",
@@ -120,7 +120,7 @@ ONE_MODEL_METADATA = {
                         "y": 0
                     }
                     },
-                    "id": "anotherUUID",  # TODO: Replace with actual UUID
+                    "id": "yetAnotherUUID",  # TODO: Replace with actual UUID
                 }
             ],
             "edges": []
