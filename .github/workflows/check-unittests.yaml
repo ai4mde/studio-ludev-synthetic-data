@@ -175,15 +175,15 @@ jobs:
 
       - name: Install dependencies - e2e
         working-directory: e2e
-        run: npm install
-
-      - name: Run Playwright E2E tests
-        working-directory: e2e
-        run: npm test
+        run: npm ci
 
       - name: Install Playwright browsers
         working-directory: e2e
         run: npx playwright install --with-deps
+
+      - name: Run Playwright E2E tests
+        working-directory: e2e
+        run: npm test
 
       - name: Generate Playwright test report
         working-directory: e2e
