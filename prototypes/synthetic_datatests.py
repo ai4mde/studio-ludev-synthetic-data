@@ -283,97 +283,97 @@ PROTOTYPE_METADATA = {
 
 
 
-# class SyntheticDataUnitTests(unittest.TestCase):
-#     def test_make_prompt_correct_model(self):
-#         response = generate_synthetic_data.make_prompt([{'model_name': 'Manufacturer', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, {'name': 'name1', 'type': 'CharField', 'choices': None}, {'name': 'age1', 'type': 'IntegerField', 'choices': None}]}], "", {"Manufacturer":3}, {})
-#         assert type(response) == str, f"Make prompt correct_model failed: {response}"
+class SyntheticDataUnitTests(unittest.TestCase):
+    def test_make_prompt_correct_model(self):
+        response = generate_synthetic_data.make_prompt([{'model_name': 'Manufacturer', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, {'name': 'name1', 'type': 'CharField', 'choices': None}, {'name': 'age1', 'type': 'IntegerField', 'choices': None}]}], "", {"Manufacturer":3}, {})
+        assert type(response) == str, f"Make prompt correct_model failed: {response}"
 
-#     def test_make_prompt_correct_multiple_models(self):
-#         response = generate_synthetic_data.make_prompt([
-#             {'model_name': 'Delivery', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, 
-#                                                   {'name': 'name', 'type': 'CharField', 'choices': None}, 
-#                                                   {'name': 'licence1', 'type': 'IntegerField', 'choices': None}, 
-#                                                   {'name': 'Manufacturer', 'type': 'ForeignKey', 'choices': None}]}, 
-#             {'model_name': 'Manufacturer', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, 
-#                                                       {'name': 'name1', 'type': 'CharField', 'choices': None}, 
-#                                                       {'name': 'age1', 'type': 'IntegerField', 'choices': None}]}, 
-#             {'model_name': 'Person10', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, 
-#                                                   {'name': 'name10', 'type': 'CharField', 'choices': None}, 
-#                                                   {'name': 'age10', 'type': 'IntegerField', 'choices': None}]}
-#             ], "", {"Manufacturer": 3, "Delivery": 3, "Person10": 3}, {})
-#         assert type(response) == str, f"Make prompt multiple_models failed: {response}"
+    def test_make_prompt_correct_multiple_models(self):
+        response = generate_synthetic_data.make_prompt([
+            {'model_name': 'Delivery', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, 
+                                                  {'name': 'name', 'type': 'CharField', 'choices': None}, 
+                                                  {'name': 'licence1', 'type': 'IntegerField', 'choices': None}, 
+                                                  {'name': 'Manufacturer', 'type': 'ForeignKey', 'choices': None}]}, 
+            {'model_name': 'Manufacturer', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, 
+                                                      {'name': 'name1', 'type': 'CharField', 'choices': None}, 
+                                                      {'name': 'age1', 'type': 'IntegerField', 'choices': None}]}, 
+            {'model_name': 'Person10', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, 
+                                                  {'name': 'name10', 'type': 'CharField', 'choices': None}, 
+                                                  {'name': 'age10', 'type': 'IntegerField', 'choices': None}]}
+            ], "", {"Manufacturer": 3, "Delivery": 3, "Person10": 3}, {})
+        assert type(response) == str, f"Make prompt multiple_models failed: {response}"
 
-#     def test_make_prompt_incorrect_model(self):
-#         with self.assertRaises(ValueError):
-#             generate_synthetic_data.make_prompt([{'model_name': 'Manufacturer', 'fields': [{'name': 'id'}, {'name': 'age1', 'type': 'IntegerField', 'choices': None}]}], "", {"Manufacturer":3}, {})
+    def test_make_prompt_incorrect_model(self):
+        with self.assertRaises(ValueError):
+            generate_synthetic_data.make_prompt([{'model_name': 'Manufacturer', 'fields': [{'name': 'id'}, {'name': 'age1', 'type': 'IntegerField', 'choices': None}]}], "", {"Manufacturer":3}, {})
 
-#     def test_make_prompt_incorrect_multiple_models(self):
-#         with self.assertRaises(ValueError):
-#             generate_synthetic_data.make_prompt([{'model_name': 'Manufacturer', 'fields': [{'name': 'id'}, {'name': 'age1', 'type': 'IntegerField', 'choices': None}]}, {'model_name': 'Delivery', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, {'name': 'name', 'type': 'CharField', 'choices': None}, {'name': 'licence1', 'type': 'IntegerField', 'choices': None}, {'name': 'Manufacturer', 'type': 'ForeignKey', 'choices': None}]}, {'model_name': 'Person10', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, {'name': 'name10', 'type': 'CharField', 'choices': None}, {'name': 'age10', 'type': 'IntegerField', 'choices': None}]}], "", {"Manufacturer": 3, "Delivery": 3, "Person10": 3}, { })
+    def test_make_prompt_incorrect_multiple_models(self):
+        with self.assertRaises(ValueError):
+            generate_synthetic_data.make_prompt([{'model_name': 'Manufacturer', 'fields': [{'name': 'id'}, {'name': 'age1', 'type': 'IntegerField', 'choices': None}]}, {'model_name': 'Delivery', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, {'name': 'name', 'type': 'CharField', 'choices': None}, {'name': 'licence1', 'type': 'IntegerField', 'choices': None}, {'name': 'Manufacturer', 'type': 'ForeignKey', 'choices': None}]}, {'model_name': 'Person10', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, {'name': 'name10', 'type': 'CharField', 'choices': None}, {'name': 'age10', 'type': 'IntegerField', 'choices': None}]}], "", {"Manufacturer": 3, "Delivery": 3, "Person10": 3}, { })
 
-#     def test_make_prompt_negative_nrecords(self):
-#         with self.assertRaises(ValueError):
-#             generate_synthetic_data.make_prompt([{'model_name': 'Manufacturer', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, {'name': 'name1', 'type': 'CharField', 'choices': None}, {'name': 'age1', 'type': 'IntegerField', 'choices': None}]}], "", {"Manufacturer": -3}, {})
+    def test_make_prompt_negative_nrecords(self):
+        with self.assertRaises(ValueError):
+            generate_synthetic_data.make_prompt([{'model_name': 'Manufacturer', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, {'name': 'name1', 'type': 'CharField', 'choices': None}, {'name': 'age1', 'type': 'IntegerField', 'choices': None}]}], "", {"Manufacturer": -3}, {})
 
-#     def test_make_prompt_zero_nrecords(self):
-#         with self.assertRaises(ValueError):
-#             generate_synthetic_data.make_prompt([{'model_name': 'Manufacturer', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, {'name': 'name1', 'type': 'CharField', 'choices': None}, {'name': 'age1', 'type': 'IntegerField', 'choices': None}]}], "", {"Manufacturer": 0}, {})
+    def test_make_prompt_zero_nrecords(self):
+        with self.assertRaises(ValueError):
+            generate_synthetic_data.make_prompt([{'model_name': 'Manufacturer', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, {'name': 'name1', 'type': 'CharField', 'choices': None}, {'name': 'age1', 'type': 'IntegerField', 'choices': None}]}], "", {"Manufacturer": 0}, {})
 
-#     def test_make_prompt_no_fields(self):
-#         with self.assertRaises(ValueError):
-#             generate_synthetic_data.make_prompt([], "", {}, {})
+    def test_make_prompt_no_fields(self):
+        with self.assertRaises(ValueError):
+            generate_synthetic_data.make_prompt([], "", {}, {})
 
 class SyntheticDataIntegrationTests(unittest.TestCase):
-    # def test_extract_model_definitions(self):
+    def test_extract_model_definitions(self):
 
-    #     #Generate the prototype to perform a test on
-    #     response = requests.post(f"{PROTOTYPE_API}/generate", json={
-    #         "id": PROTOTYPE_ID,
-    #         "name": PROTOTYPE_NAME,
-    #         "system": PROTOTYPE_SYSTEM,
-    #         "metadata": json.dumps(PROTOTYPE_METADATA)
-    #     })
-    #     #I think this assert should only be done on the first integration test
-    #     assert response.status_code == 200, f"Setup failed: {response.text}" 
+        #Generate the prototype to perform a test on
+        response = requests.post(f"{PROTOTYPE_API}/generate", json={
+            "id": PROTOTYPE_ID,
+            "name": PROTOTYPE_NAME,
+            "system": PROTOTYPE_SYSTEM,
+            "metadata": json.dumps(PROTOTYPE_METADATA)
+        })
+        #I think this assert should only be done on the first integration test
+        assert response.status_code == 200, f"Setup failed: {response.text}" 
 
-    #     # print("prototypename before", PROTOTYPE_NAME)
-    #     # print("prototypeid before", PROTOTYPE_ID)
-    #     # print("Protype system before", PROTOTYPE_SYSTEM)
+        # print("prototypename before", PROTOTYPE_NAME)
+        # print("prototypeid before", PROTOTYPE_ID)
+        # print("Protype system before", PROTOTYPE_SYSTEM)
 
-    #     testsubprocess = subprocess.run(
-    #     ["python3", "/usr/src/prototypes/backend/tests/test_extract_model_case_1.py", PROTOTYPE_NAME, PROTOTYPE_SYSTEM]
-    #     )
+        testsubprocess = subprocess.run(
+        ["python3", "/usr/src/prototypes/backend/tests/test_extract_model_case_1.py", PROTOTYPE_NAME, PROTOTYPE_SYSTEM]
+        )
 
-    #     #Remove the prototype
-    #     requests.delete(f"{PROTOTYPE_API}/remove", json={
-    #         "id": PROTOTYPE_ID,
-    #         "name": PROTOTYPE_NAME,
-    #         "system": PROTOTYPE_SYSTEM,
-    #     })
+        #Remove the prototype
+        requests.delete(f"{PROTOTYPE_API}/remove", json={
+            "id": PROTOTYPE_ID,
+            "name": PROTOTYPE_NAME,
+            "system": PROTOTYPE_SYSTEM,
+        })
         
-    #     assert testsubprocess.returncode == 0, f"Extract model definitions test failed with return code {testsubprocess.returncode}: {testsubprocess.stderr}"
+        assert testsubprocess.returncode == 0, f"Extract model definitions test failed with return code {testsubprocess.returncode}: {testsubprocess.stderr}"
 
-    # def test_toposort_models_three_chain(self):
-    #     response = requests.post(f"{PROTOTYPE_API}/generate", json={
-    #         "id": PROTOTYPE_ID,
-    #         "name": PROTOTYPE_NAME,
-    #         "system": PROTOTYPE_SYSTEM,
-    #         "metadata": json.dumps(PROTOTYPE_METADATA)
-    #     })
+    def test_toposort_models_three_chain(self):
+        response = requests.post(f"{PROTOTYPE_API}/generate", json={
+            "id": PROTOTYPE_ID,
+            "name": PROTOTYPE_NAME,
+            "system": PROTOTYPE_SYSTEM,
+            "metadata": json.dumps(PROTOTYPE_METADATA)
+        })
         
-    #     assert response.status_code == 200, f"Setup failed: {response.text}" 
+        assert response.status_code == 200, f"Setup failed: {response.text}" 
 
-    #     testsubprocess = subprocess.run(
-    #     ["python3", "/usr/src/prototypes/backend/tests/test_toposort_models_.py", PROTOTYPE_NAME, PROTOTYPE_SYSTEM]
-    #     )
+        testsubprocess = subprocess.run(
+        ["python3", "/usr/src/prototypes/backend/tests/test_toposort_models_.py", PROTOTYPE_NAME, PROTOTYPE_SYSTEM]
+        )
 
-    #     #Remove the prototype
-    #     requests.delete(f"{PROTOTYPE_API}/remove", json={
-    #         "id": PROTOTYPE_ID,
-    #         "name": PROTOTYPE_NAME,
-    #         "system": PROTOTYPE_SYSTEM,
-    #     })
-    #     assert testsubprocess.returncode == 0, f"Toposort test failed with return code {testsubprocess.returncode}: {testsubprocess.stderr}"
+        #Remove the prototype
+        requests.delete(f"{PROTOTYPE_API}/remove", json={
+            "id": PROTOTYPE_ID,
+            "name": PROTOTYPE_NAME,
+            "system": PROTOTYPE_SYSTEM,
+        })
+        assert testsubprocess.returncode == 0, f"Toposort test failed with return code {testsubprocess.returncode}: {testsubprocess.stderr}"
 
 
     def test_save_records_models(self):
