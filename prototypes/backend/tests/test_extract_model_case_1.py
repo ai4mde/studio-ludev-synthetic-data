@@ -24,7 +24,7 @@ hidden_models = ["LogEntry", "Permission", "Group", "User", "ContentType", "Sess
 
 model_definition = extract_model_definitions(apps.get_models(), hidden_models)
 
-print(model_definition)
+# print(model_definition)
 
 if len(model_definition) != 3:
     exit(1)
