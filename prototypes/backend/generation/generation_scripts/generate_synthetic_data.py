@@ -74,6 +74,8 @@ def toposort_models(models, hidden_models):
 
 
 def make_prompt(model_definitions, synthetic_instructions, synthetic_counts, synthetic_instructions_per_node):
+    if not isinstance(model_definitions, list) or len(model_definitions) == 0:
+        raise ValueError("model_definitions must be a non-empty list.") # ensures that the input is a list and not empty
     prompt = f"""
     You are going to generate synthetic sample data for a database based on Django model definitions.
     1) Make sure values match the expected type for each field. 
@@ -88,26 +90,28 @@ def make_prompt(model_definitions, synthetic_instructions, synthetic_counts, syn
         if not isinstance(model_def, dict):
             raise ValueError("At least one model definition is not a dictionary")
         if not isinstance(model_def.get("model_name"), str):
-            raise ValueError
+            raise ValueError("Model name must be a string.")
         fields = model_def.get("fields")
-        if not isinstance(fields, list):
-            raise ValueError
+        if not isinstance(fields, list) or len(fields) == 0:
+            raise ValueError(f"Model {model_def.get('model_name')} must have a non-empty list of fields.")
         required_keys = {"name", "type", "choices"}
         for field in fields:
-            if field.keys() != required_keys:
-                raise ValueError
+            if set(field.keys()) != required_keys:
+                raise ValueError(f"Field keys must be {required_keys}, but got {field.keys()}")
 
         model_name = model_def["model_name"]
         per_node_instructions = synthetic_instructions_per_node.get(model_name, "").strip()
         if per_node_instructions:
             print(f"Using custom instruction: {per_node_instructions}")
         single_model_def = {
-            "model_name": model_def["model_name"],
-            "fields": model_def["fields"],
+            "model_name": model_name,
+            "fields": fields,
         }
         formatted_model_def = json.dumps(single_model_def, indent=2)
 
         num_records = synthetic_counts.get(model_name, 10)
+        if not isinstance(num_records, int) or num_records <= 0:
+            raise ValueError(f"Invalid number of records for model {model_name}: {num_records}. Must be a positive integer.")
         prompt += f"\nGenerate {num_records} synthetic records based on the following model definition:\n{formatted_model_def}\n"
         if per_node_instructions:
             prompt += f"With these additional instructions for model {model_name}: {per_node_instructions}\n"
