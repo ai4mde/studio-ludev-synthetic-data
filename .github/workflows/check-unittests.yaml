@@ -182,7 +182,6 @@ jobs:
         run: npm test
 
       - name: Generate Playwright test report
-        if: always()
         working-directory: e2e
         run: npm run test:report
 
