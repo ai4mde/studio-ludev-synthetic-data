@@ -673,45 +673,45 @@ CYCLE_METADATA = {
   "useAuthentication": False
 }
 
-# class SyntheticDataUnitTests(unittest.TestCase):
-#     def test_make_prompt_correct_model(self):
-#         response = generate_synthetic_data.make_prompt([{'model_name': 'Manufacturer', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, {'name': 'name1', 'type': 'CharField', 'choices': None}, {'name': 'age1', 'type': 'IntegerField', 'choices': None}]}], "", {"Manufacturer":3}, {})
-#         assert type(response) == str, f"Make prompt correct_model failed: {response}"
+class SyntheticDataUnitTests(unittest.TestCase):
+    def test_make_prompt_correct_model(self):
+        response = generate_synthetic_data.make_prompt([{'model_name': 'Manufacturer', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, {'name': 'name1', 'type': 'CharField', 'choices': None}, {'name': 'age1', 'type': 'IntegerField', 'choices': None}]}], "", {"Manufacturer":3}, {})
+        assert type(response) == str, f"Make prompt correct_model failed: {response}"
 
-#     def test_make_prompt_correct_multiple_models(self):
-#         response = generate_synthetic_data.make_prompt([
-#             {'model_name': 'Delivery', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, 
-#                                                   {'name': 'name', 'type': 'CharField', 'choices': None}, 
-#                                                   {'name': 'licence1', 'type': 'IntegerField', 'choices': None}, 
-#                                                   {'name': 'Manufacturer', 'type': 'ForeignKey', 'choices': None}]}, 
-#             {'model_name': 'Manufacturer', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, 
-#                                                       {'name': 'name1', 'type': 'CharField', 'choices': None}, 
-#                                                       {'name': 'age1', 'type': 'IntegerField', 'choices': None}]}, 
-#             {'model_name': 'Person10', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, 
-#                                                   {'name': 'name10', 'type': 'CharField', 'choices': None}, 
-#                                                   {'name': 'age10', 'type': 'IntegerField', 'choices': None}]}
-#             ], "", {"Manufacturer": 3, "Delivery": 3, "Person10": 3}, {})
-#         assert type(response) == str, f"Make prompt multiple_models failed: {response}"
+    def test_make_prompt_correct_multiple_models(self):
+        response = generate_synthetic_data.make_prompt([
+            {'model_name': 'Delivery', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, 
+                                                  {'name': 'name', 'type': 'CharField', 'choices': None}, 
+                                                  {'name': 'licence1', 'type': 'IntegerField', 'choices': None}, 
+                                                  {'name': 'Manufacturer', 'type': 'ForeignKey', 'choices': None}]}, 
+            {'model_name': 'Manufacturer', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, 
+                                                      {'name': 'name1', 'type': 'CharField', 'choices': None}, 
+                                                      {'name': 'age1', 'type': 'IntegerField', 'choices': None}]}, 
+            {'model_name': 'Person10', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, 
+                                                  {'name': 'name10', 'type': 'CharField', 'choices': None}, 
+                                                  {'name': 'age10', 'type': 'IntegerField', 'choices': None}]}
+            ], "", {"Manufacturer": 3, "Delivery": 3, "Person10": 3}, {})
+        assert type(response) == str, f"Make prompt multiple_models failed: {response}"
 
-#     def test_make_prompt_incorrect_model(self):
-#         with self.assertRaises(ValueError):
-#             generate_synthetic_data.make_prompt([{'model_name': 'Manufacturer', 'fields': [{'name': 'id'}, {'name': 'age1', 'type': 'IntegerField', 'choices': None}]}], "", {"Manufacturer":3}, {})
+    def test_make_prompt_incorrect_model(self):
+        with self.assertRaises(ValueError):
+            generate_synthetic_data.make_prompt([{'model_name': 'Manufacturer', 'fields': [{'name': 'id'}, {'name': 'age1', 'type': 'IntegerField', 'choices': None}]}], "", {"Manufacturer":3}, {})
 
-#     def test_make_prompt_incorrect_multiple_models(self):
-#         with self.assertRaises(ValueError):
-#             generate_synthetic_data.make_prompt([{'model_name': 'Manufacturer', 'fields': [{'name': 'id'}, {'name': 'age1', 'type': 'IntegerField', 'choices': None}]}, {'model_name': 'Delivery', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, {'name': 'name', 'type': 'CharField', 'choices': None}, {'name': 'licence1', 'type': 'IntegerField', 'choices': None}, {'name': 'Manufacturer', 'type': 'ForeignKey', 'choices': None}]}, {'model_name': 'Person10', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, {'name': 'name10', 'type': 'CharField', 'choices': None}, {'name': 'age10', 'type': 'IntegerField', 'choices': None}]}], "", {"Manufacturer": 3, "Delivery": 3, "Person10": 3}, { })
+    def test_make_prompt_incorrect_multiple_models(self):
+        with self.assertRaises(ValueError):
+            generate_synthetic_data.make_prompt([{'model_name': 'Manufacturer', 'fields': [{'name': 'id'}, {'name': 'age1', 'type': 'IntegerField', 'choices': None}]}, {'model_name': 'Delivery', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, {'name': 'name', 'type': 'CharField', 'choices': None}, {'name': 'licence1', 'type': 'IntegerField', 'choices': None}, {'name': 'Manufacturer', 'type': 'ForeignKey', 'choices': None}]}, {'model_name': 'Person10', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, {'name': 'name10', 'type': 'CharField', 'choices': None}, {'name': 'age10', 'type': 'IntegerField', 'choices': None}]}], "", {"Manufacturer": 3, "Delivery": 3, "Person10": 3}, { })
 
-#     def test_make_prompt_negative_nrecords(self):
-#         with self.assertRaises(ValueError):
-#             generate_synthetic_data.make_prompt([{'model_name': 'Manufacturer', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, {'name': 'name1', 'type': 'CharField', 'choices': None}, {'name': 'age1', 'type': 'IntegerField', 'choices': None}]}], "", {"Manufacturer": -3}, {})
+    def test_make_prompt_negative_nrecords(self):
+        with self.assertRaises(ValueError):
+            generate_synthetic_data.make_prompt([{'model_name': 'Manufacturer', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, {'name': 'name1', 'type': 'CharField', 'choices': None}, {'name': 'age1', 'type': 'IntegerField', 'choices': None}]}], "", {"Manufacturer": -3}, {})
 
-#     def test_make_prompt_zero_nrecords(self):
-#         with self.assertRaises(ValueError):
-#             generate_synthetic_data.make_prompt([{'model_name': 'Manufacturer', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, {'name': 'name1', 'type': 'CharField', 'choices': None}, {'name': 'age1', 'type': 'IntegerField', 'choices': None}]}], "", {"Manufacturer": 0}, {})
+    def test_make_prompt_zero_nrecords(self):
+        with self.assertRaises(ValueError):
+            generate_synthetic_data.make_prompt([{'model_name': 'Manufacturer', 'fields': [{'name': 'id', 'type': 'BigAutoField', 'choices': None}, {'name': 'name1', 'type': 'CharField', 'choices': None}, {'name': 'age1', 'type': 'IntegerField', 'choices': None}]}], "", {"Manufacturer": 0}, {})
 
-#     def test_make_prompt_no_fields(self):
-#         with self.assertRaises(ValueError):
-#             generate_synthetic_data.make_prompt([], "", {}, {})
+    def test_make_prompt_no_fields(self):
+        with self.assertRaises(ValueError):
+            generate_synthetic_data.make_prompt([], "", {}, {})
 
 class SyntheticDataIntegrationTests(unittest.TestCase):
     def test_extract_model_definitions(self):
