@@ -1,6 +1,3 @@
-# NEEDS METADATA WITH CYCLE
-
-
 import sys
 import os
 import django
@@ -20,7 +17,7 @@ from generate_synthetic_data import toposort_models
 PROTOTYPE_NAME = sys.argv[1]
 SYSTEM = sys.argv[2]
 
-setup_django(PROTOTYPE_NAME, SYSTEM)
+setup_django(SYSTEM, PROTOTYPE_NAME)
 
 hidden_models = ["LogEntry", "Permission", "Group", "User", "ContentType", "Session"]
 
