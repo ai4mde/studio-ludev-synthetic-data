@@ -25,7 +25,8 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Create dummy prototypes_keys.env
-        run: touch config/prototypes_keys.env
+        working-directory: config
+        run: touch prototypes_keys.env
 
       - name: Install yarn
         run: npm install -g yarn
