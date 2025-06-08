@@ -58,6 +58,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Create dummy prototypes_keys.env
+        working-directory: config
+        run: touch prototypes_keys.env
+
     # Start Docker containers
       - name: Start containers
         run: docker compose -f "docker-compose.yaml" up -d --build
