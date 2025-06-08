@@ -97,8 +97,8 @@ jobs:
         run: python -m unittest discover -s generation_scripts -p 'loading_json_utils_tests.py'
 
       - name: Run unit/integration tests - prototypes/backend
-        working-directory: prototypes
-        run: python -m unittest discover -s backend -p 'synthetic_datatests.py'
+        # working-directory: prototypes
+        run: python -m unittest discover -s prototypes -p 'synthetic_datatests.py'
 
       # Stop Docker containers
       - name: Stop containers
@@ -144,3 +144,51 @@ jobs:
         run: |
           poetry run pip install pylint
           poetry run pylint $(git ls-files '*.py') # Only if tracked by git
+
+  # e2e-tests:
+  #   runs-on: ubuntu-latest # Switch to github-arc later
+  #   env:
+  #     LANG: C.UTF-8
+
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+      
+  #     - name: Create dummy prototypes_keys.env
+  #       working-directory: config
+  #       run: touch prototypes_keys.env
+      
+  #     - name: Start containers
+  #       run: docker compose -f "docker-compose.yaml" up -d --build
+      
+  #     - name: Set up Node.js
+  #       uses: actions/setup-node@v4
+
+  #     - name: Cache npm dependencies - e2e
+  #       uses: actions/cache@v4
+  #       with:
+  #         path: ~/.npm
+  #         key: ${{ runner.os }}-npm-${{ hashFiles('e2e/package-lock.json') }}
+  #         restore-keys: |
+  #           ${{ runner.os }}-npm-
+  #           ${{ runner.os }}-
+
+  #     - name: Install dependencies - e2e
+  #       working-directory: e2e
+  #       run: npm ci
+
+  #     - name: Install Playwright browsers
+  #       working-directory: e2e
+  #       run: npx playwright install --with-deps
+
+  #     - name: Run Playwright E2E tests
+  #       working-directory: e2e
+  #       run: npm test
+
+  #     - name: Generate Playwright test report
+  #       working-directory: e2e
+  #       run: npm run test:report
+
+  #     - name: Stop containers
+  #       if: always()
+  #       run: docker compose -f "docker-compose.yaml" down
