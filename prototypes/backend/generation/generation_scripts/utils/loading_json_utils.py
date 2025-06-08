@@ -63,6 +63,14 @@ def get_synthetic_counts(metadata: str) -> dict:
     return metadata_json.get("syntheticCounts", {})
 
 
+def get_synthetic_instructions_per_node(metadata: str) -> dict:
+    if metadata in ["", None]:
+        raise Exception("Metadata is empty")
+    metadata_json = json.loads(metadata)
+    return metadata_json.get("syntheticInstructionsPerNode", {})
+
+
+
 def get_enum_literals(metadata: str, class_id: str) -> List[str]:
     out = []
     for diagram in json.loads(metadata)["diagrams"]:

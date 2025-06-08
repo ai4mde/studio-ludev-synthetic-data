@@ -5,6 +5,7 @@ import os
 import time
 import socket
 import signal
+import json
 
 app = Flask(__name__)
 
@@ -60,6 +61,8 @@ def start_prototype(prototype_id: str, prototype_name: str, prototype_system: st
 def run_prototype():
     stop_prototype()
     data = request.json
+    if data is None:
+        return "Missing JSON data in request body", 400
     id = data.get('id')
     name = data.get('name')
     system = data.get('system')
@@ -102,54 +105,45 @@ def get_active_prototype():
 def generate_prototype():
     GENERATOR_PATH = "/usr/src/prototypes/backend/generation/generator.sh"  # TODO: put in env
     COPY_DATABASE_PATH = "/usr/src/prototypes/backend/generation/copy_database.sh"
-    GET_GLOBALS_PATH = "/usr/src/prototypes/backend/generation/generation_scripts/get_globals.py"
+    SYNTHETIC_DATA_GENERATOR_PATH = "/usr/src/prototypes/backend/generation/generation_scripts/generate_synthetic_data.py"
 
     data = request.json
+    if data is None:
+        return "Missing JSON data in request body", 400
     id = data.get('id')
     name = data.get('name')
     system = data.get('system')
     metadata = data.get('metadata')
+    metadata_json = json.loads(metadata)
+
     try:
         subprocess.run([GENERATOR_PATH, id, system, name, metadata], check=True)
     except subprocess.CalledProcessError:
         return f"Failed to generate prototype, id={id}", 500
 
-    # print(metadata)
-    retrieveUseSyntheticData = subprocess.run(
-        ["python3", GET_GLOBALS_PATH, "get_synth", metadata],
-        stdout=subprocess.PIPE,
-        text=True
-    )
-    # Backend will use Synthetic data here
-    useSyntheticData = retrieveUseSyntheticData.stdout.strip() == "True"
+    useSyntheticData = metadata_json.get('useSyntheticData', False)
+    syntheticCounts = metadata_json.get('syntheticCounts', 10)
+    syntheticInstructions = metadata_json.get('syntheticInstructions', {})
+    syntheticInstructionsPerNode = metadata_json.get('syntheticInstructionsPerNode', {})
+
+    print("api.py use synthetic data:", useSyntheticData)
+    print("api.py global instructions:", syntheticInstructions)
+    print("api.py counts:", syntheticCounts)
+    print("api.py instructions per node:", syntheticInstructionsPerNode)
+
     if useSyntheticData:
-        subprocess.call(["python3", "/usr/src/prototypes/backend/schema_extract.py", name, system])   #added this for now to test the working of schema_extract.py
-        print("Use synthetic data.")
-    else:
-        print("Do not use synthetic data.")
-    
-
-    # Get synthetic instructions
-    retrieveInstructions = subprocess.run(
-        ["python3", GET_GLOBALS_PATH, "get_instr", metadata],
-        stdout=subprocess.PIPE,
-        text=True
-    )
-    syntheticInstructions = retrieveInstructions.stdout.strip()
-
-    # Get synthetic counts
-    retrieveCounts = subprocess.run(
-        ["python3", GET_GLOBALS_PATH, "get_counts", metadata],
-        stdout=subprocess.PIPE,
-        text=True
-    )
-    import json
-    syntheticCounts = json.loads(retrieveCounts.stdout.strip())
-
-    print("Instructions:", syntheticInstructions)
-    print("Counts:", syntheticCounts)
-
-    subprocess.call(["python3", "/usr/src/prototypes/backend/schema_extract.py", name, system, syntheticInstructions, json.dumps(syntheticCounts)])   #added this for now to test the working of schema_extract.py
+        try:
+            subprocess.call([
+                "python3",
+                SYNTHETIC_DATA_GENERATOR_PATH,
+                name,
+                system,
+                syntheticInstructions,
+                json.dumps(syntheticCounts),
+                json.dumps(syntheticInstructionsPerNode),
+            ])
+        except:
+            return f"Failed to generate and populate synthetic data", 500
 
     # TODO: this database retrieval should be done using ids
     if 'database_prototype_name' in data:
@@ -165,6 +159,8 @@ def generate_prototype():
 def remove_prototype():
     REMOVER_PATH = "/usr/src/prototypes/backend/generation/remover.sh"  # TODO: put in env
     data = request.json
+    if data is None:
+        return "Missing JSON data in request body", 400
     id = data.get('id')
     name = data.get('name')
     system = data.get('system')
@@ -178,4 +174,4 @@ def remove_prototype():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=os.environ.get('PORT', 8010), debug=True)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8010)), debug=True)
